@@ -48,7 +48,7 @@ export function QrScanner({ onScan, onClose }: QrScannerProps) {
         // @ts-ignore
         const detector = new BarcodeDetector({ formats: ["qr_code"] });
 
-        async function detect() {
+        const detect = async (): Promise<void> => {
           if (stopped || !videoRef.current) return;
           try {
             const barcodes = await detector.detect(videoRef.current);
@@ -64,7 +64,7 @@ export function QrScanner({ onScan, onClose }: QrScannerProps) {
             }
           } catch {}
           animFrame = requestAnimationFrame(detect);
-        }
+        };
         detect();
       } catch {
         setError("ไม่สามารถเข้าถึงกล้องได้ — กรุณาอนุญาตการใช้กล้อง");
