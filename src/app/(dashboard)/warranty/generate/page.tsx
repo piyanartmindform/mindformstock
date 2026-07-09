@@ -1,4 +1,6 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUserRole } from "@/lib/auth";
 import { GenerateQRForm } from "./GenerateQRForm";
 import Link from "next/link";
 
@@ -15,6 +17,9 @@ async function getNextNumber() {
 }
 
 export default async function GenerateQRPage() {
+  const role = await getCurrentUserRole();
+  if (role !== "admin") redirect("/warranty");
+
   const nextNumber = await getNextNumber();
   return (
     <div className="p-4 max-w-lg mx-auto w-full">

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import QRCode from "qrcode";
 import { PrintButton } from "@/components/ui/PrintButton";
+import { getCurrentUserRole } from "@/lib/auth";
 import Link from "next/link";
 
 async function getCodes(batchId: string) {
@@ -21,7 +22,7 @@ export default async function PrintPage({
   const batchId = searchParams.batch;
   if (!batchId) return <div className="p-8 text-gray-500">ไม่พบ batch</div>;
 
-  const codes = await getCodes(batchId);
+  const [codes, role] = await Promise.all([getCodes(batchId), getCurrentUserRole()]);
   if (codes.length === 0) return <div className="p-8 text-gray-500">ไม่พบข้อมูล</div>;
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
@@ -97,12 +98,14 @@ export default async function PrintPage({
             <p className="text-xs text-gray-500 mt-0.5">กระดาษ E-128 (21×17mm) · 8 คอลัมน์ × 16 แถว</p>
           </div>
           <div className="flex gap-2">
-            <Link
-              href="/warranty/generate"
-              className="h-10 px-4 rounded-xl border border-gray-300 text-sm text-gray-700 flex items-center"
-            >
-              สร้างใหม่
-            </Link>
+            {role === "admin" && (
+              <Link
+                href="/warranty/generate"
+                className="h-10 px-4 rounded-xl border border-gray-300 text-sm text-gray-700 flex items-center"
+              >
+                สร้างใหม่
+              </Link>
+            )}
             <PrintButton label="🖨️ พิมพ์" />
           </div>
         </div>

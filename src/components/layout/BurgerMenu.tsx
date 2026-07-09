@@ -7,18 +7,20 @@ import { createClient } from "@/lib/supabase/client";
 
 const menuItems = [
   { href: "/stock-in/expected", label: "รายการที่รอรับเข้า", icon: "📋" },
+  { href: "/stock-out/expected", label: "รายการที่รอส่งออก", icon: "📤" },
   { href: "/customers", label: "รายชื่อลูกค้า", icon: "👥" },
   { href: "/warranty/register", label: "ลงทะเบียนประกัน", icon: "✍️" },
-  { href: "/warranty/generate", label: "สร้าง QR Batch", icon: "🏷️" },
+  { href: "/warranty/generate", label: "สร้าง QR Batch", icon: "🏷️", adminOnly: true },
   { href: "/reports", label: "รายงาน", icon: "📊" },
   { href: "/settings", label: "ตั้งค่า", icon: "⚙️" },
   { href: "/settings/users", label: "จัดการ User", icon: "👤" },
 ];
 
-export function BurgerMenu() {
+export function BurgerMenu({ isAdmin }: { isAdmin: boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const items = menuItems.filter((item) => !item.adminOnly || isAdmin);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -56,7 +58,7 @@ export function BurgerMenu() {
 
       {open && (
         <div className="absolute right-0 top-12 w-52 bg-white rounded-2xl shadow-lg border border-gray-100 py-2 z-50">
-          {menuItems.map((item) => (
+          {items.map((item) => (
             <Link
               key={item.href}
               href={item.href}

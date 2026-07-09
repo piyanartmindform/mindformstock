@@ -10,17 +10,19 @@ const navItems = [
   { href: "/stock-in", label: "รับสินค้าเข้า", icon: "📥" },
   { href: "/stock-in/expected", label: "รายการที่รอรับเข้า", icon: "📋" },
   { href: "/stock-out", label: "ขายออก", icon: "🛒" },
+  { href: "/stock-out/expected", label: "รายการที่รอส่งออก", icon: "📤" },
   { href: "/warranty", label: "QR / ประกัน", icon: "🔲" },
   { href: "/warranty/register", label: "ลงทะเบียนประกัน", icon: "✍️" },
-  { href: "/warranty/generate", label: "สร้าง QR Batch", icon: "🏷️" },
+  { href: "/warranty/generate", label: "สร้าง QR Batch", icon: "🏷️", adminOnly: true },
   { href: "/customers", label: "ลูกค้า", icon: "👥" },
   { href: "/reports", label: "รายงาน", icon: "📊" },
   { href: "/settings", label: "ตั้งค่า", icon: "⚙️" },
   { href: "/settings/users", label: "จัดการ User", icon: "👤" },
 ];
 
-export function Sidebar() {
+export function Sidebar({ isAdmin }: { isAdmin: boolean }) {
   const pathname = usePathname();
+  const items = navItems.filter((item) => !item.adminOnly || isAdmin);
 
   return (
     <aside className="hidden md:flex w-56 flex-col bg-white border-r border-gray-200 min-h-screen">
@@ -31,7 +33,7 @@ export function Sidebar() {
         <span className="font-semibold text-gray-900">MINDFORM Stock</span>
       </div>
       <nav className="flex-1 py-4 px-2">
-        {navItems.map((item) => {
+        {items.map((item) => {
           const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
           return (
             <Link
