@@ -5,7 +5,7 @@ async function getProducts() {
   const supabase = createClient();
   const { data } = await supabase
     .from("products_mf")
-    .select("id, name, model, unit, current_stock")
+    .select("id, name, model, unit, current_stock, default_warranty_months")
     .eq("is_active", true)
     .order("name");
   return data ?? [];

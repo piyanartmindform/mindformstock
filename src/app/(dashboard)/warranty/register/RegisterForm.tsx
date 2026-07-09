@@ -85,6 +85,11 @@ export function RegisterForm({ products }: { products: Product[] }) {
       setLoading(false);
       return;
     }
+    if (existing?.status === "in_stock") {
+      setError(`รหัส ${trimmedCode} เป็นสินค้าที่อยู่ในสต็อกแล้ว กรุณาใช้หน้า "ขายออก" เพื่อสแกนออกแทน จะได้ตัดสต็อกให้ถูกต้อง`);
+      setLoading(false);
+      return;
+    }
 
     let updateErr: any;
     if (existing) {

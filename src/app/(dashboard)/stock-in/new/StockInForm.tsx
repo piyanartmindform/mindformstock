@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
+import { QrCodeListInput } from "@/components/ui/QrCodeListInput";
 
 interface Product {
   id: string;
@@ -13,6 +14,7 @@ interface Product {
   model: string | null;
   unit: string;
   current_stock: number;
+  default_warranty_months: number;
 }
 
 export function StockInForm({
@@ -26,32 +28,74 @@ export function StockInForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedProductId, setSelectedProductId] = useState(defaultProductId ?? "");
+  const [scannedCodes, setScannedCodes] = useState<string[]>([]);
 
   const selectedProduct = products.find((p) => p.id === selectedProductId);
+  const isSerialized = (selectedProduct?.default_warranty_months ?? 0) > 0;
+
+  function handleProductChange(id: string) {
+    setSelectedProductId(id);
+    setScannedCodes([]);
+    setError("");
+  }
+
+  async function validateUnusedCode(code: string): Promise<string | undefined> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("qr_codes_mf")
+      .select("status")
+      .eq("code", code)
+      .maybeSingle();
+    if (error) return error.message;
+    if (!data) return `ไม่พบรหัส ${code} ในระบบ`;
+    if (data.status !== "unused") return `รหัส ${code} ถูกใช้ไปแล้ว (สถานะ: ${data.status})`;
+    return undefined;
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!selectedProductId) { setError("กรุณาเลือกสินค้า"); return; }
+    if (isSerialized && scannedCodes.length === 0) { setError("กรุณาสแกน QR สินค้าอย่างน้อย 1 ดวง"); return; }
     setError("");
     setLoading(true);
 
     const fd = new FormData(e.currentTarget);
-    const quantity = Number(fd.get("quantity"));
+    const quantity = isSerialized ? scannedCodes.length : Number(fd.get("quantity"));
 
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    const { error: insertError } = await supabase.from("stock_in_mf").insert({
-      product_id: selectedProductId,
-      quantity,
-      received_date: fd.get("received_date") as string,
-      supplier: fd.get("supplier") || null,
-      source_country: fd.get("source_country") || null,
-      notes: fd.get("notes") || null,
-      created_by: user?.email ?? user?.id ?? null,
-    });
+    const { data: stockIn, error: insertError } = await supabase
+      .from("stock_in_mf")
+      .insert({
+        product_id: selectedProductId,
+        quantity,
+        received_date: fd.get("received_date") as string,
+        supplier: fd.get("supplier") || null,
+        source_country: fd.get("source_country") || null,
+        notes: fd.get("notes") || null,
+        created_by: user?.email ?? user?.id ?? null,
+      })
+      .select()
+      .single();
 
     if (insertError) { setError(insertError.message); setLoading(false); return; }
+
+    if (isSerialized) {
+      const { data: updated, error: qrError } = await supabase
+        .from("qr_codes_mf")
+        .update({ product_id: selectedProductId, status: "in_stock", stock_in_id: stockIn.id })
+        .in("code", scannedCodes)
+        .eq("status", "unused")
+        .select("code");
+
+      if (qrError) { setError(qrError.message); setLoading(false); return; }
+      if (!updated || updated.length !== scannedCodes.length) {
+        setError("มีบางรหัสถูกใช้ไปแล้วระหว่างที่กรอกฟอร์ม กรุณาตรวจสอบรายการแล้วลองใหม่");
+        setLoading(false);
+        return;
+      }
+    }
 
     // Update current_stock
     await supabase.rpc("increment_stock", { p_id: selectedProductId, amount: quantity });
@@ -65,7 +109,7 @@ export function StockInForm({
       <Select
         label="สินค้า *"
         value={selectedProductId}
-        onChange={(e) => setSelectedProductId(e.target.value)}
+        onChange={(e) => handleProductChange(e.target.value)}
         required
       >
         <option value="">-- เลือกสินค้า --</option>
@@ -82,15 +126,24 @@ export function StockInForm({
         </p>
       )}
 
-      <Input
-        label="จำนวนรับเข้า *"
-        name="quantity"
-        type="number"
-        inputMode="numeric"
-        required
-        min="1"
-        placeholder="0"
-      />
+      {isSerialized ? (
+        <QrCodeListInput
+          label="สแกน QR สินค้าที่รับเข้า"
+          codes={scannedCodes}
+          onChange={setScannedCodes}
+          validate={validateUnusedCode}
+        />
+      ) : (
+        <Input
+          label="จำนวนรับเข้า *"
+          name="quantity"
+          type="number"
+          inputMode="numeric"
+          required
+          min="1"
+          placeholder="0"
+        />
+      )}
 
       <Input
         label="วันที่รับเข้า *"
