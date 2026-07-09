@@ -29,6 +29,7 @@ export function StockInForm({
   const [error, setError] = useState("");
   const [selectedProductId, setSelectedProductId] = useState(defaultProductId ?? "");
   const [scannedCodes, setScannedCodes] = useState<string[]>([]);
+  const [savedCount, setSavedCount] = useState<number | null>(null);
 
   const selectedProduct = products.find((p) => p.id === selectedProductId);
   const isSerialized = (selectedProduct?.default_warranty_months ?? 0) > 0;
@@ -37,6 +38,7 @@ export function StockInForm({
     setSelectedProductId(id);
     setScannedCodes([]);
     setError("");
+    setSavedCount(null);
   }
 
   async function validateUnusedCode(code: string): Promise<string | undefined> {
@@ -57,6 +59,7 @@ export function StockInForm({
     if (!selectedProductId) { setError("กรุณาเลือกสินค้า"); return; }
     if (isSerialized && scannedCodes.length === 0) { setError("กรุณาสแกน QR สินค้าอย่างน้อย 1 ดวง"); return; }
     setError("");
+    setSavedCount(null);
     setLoading(true);
 
     const fd = new FormData(e.currentTarget);
@@ -100,6 +103,16 @@ export function StockInForm({
     // Update current_stock
     await supabase.rpc("increment_stock", { p_id: selectedProductId, amount: quantity });
 
+    if (isSerialized) {
+      // ทำงานต่อเนื่อง: อยู่หน้าเดิม คงสินค้า/วันที่/ซัพพลายเออร์ไว้ เคลียร์แค่รายการที่สแกน
+      // เพื่อสแกนล็อตถัดไปของสินค้าเดียวกันได้ทันที ถ้าจะเปลี่ยนสินค้าค่อยเลือกใหม่เอง
+      setScannedCodes([]);
+      setSavedCount(quantity);
+      setLoading(false);
+      router.refresh();
+      return;
+    }
+
     router.push("/stock-in");
     router.refresh();
   }
@@ -127,12 +140,19 @@ export function StockInForm({
       )}
 
       {isSerialized ? (
-        <QrCodeListInput
-          label="สแกน QR สินค้าที่รับเข้า"
-          codes={scannedCodes}
-          onChange={setScannedCodes}
-          validate={validateUnusedCode}
-        />
+        <>
+          {savedCount !== null && (
+            <div className="rounded-xl bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
+              ✓ บันทึกรับเข้าแล้ว {savedCount} ดวง — สแกนล็อตถัดไปของสินค้านี้ต่อได้เลย หรือเลือกสินค้าอื่นถ้าจะเปลี่ยน
+            </div>
+          )}
+          <QrCodeListInput
+            label="สแกน QR สินค้าที่รับเข้า"
+            codes={scannedCodes}
+            onChange={setScannedCodes}
+            validate={validateUnusedCode}
+          />
+        </>
       ) : (
         <Input
           label="จำนวนรับเข้า *"

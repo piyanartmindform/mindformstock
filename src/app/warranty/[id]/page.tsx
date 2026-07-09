@@ -1,12 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { formatDate, isWarrantyActive } from "@/lib/utils";
+import { ProductImage } from "@/components/ui/ProductImage";
 
 async function getQRCode(code: string) {
   const supabase = createClient();
   const { data } = await supabase
     .from("qr_codes_mf")
-    .select("*, products_mf(name, model, brand, description)")
+    .select("*, products_mf(name, model, brand, description, image_urls)")
     .eq("code", code.toUpperCase())
     .single();
   return data;
@@ -81,6 +82,7 @@ export default async function PublicWarrantyPage({ params }: { params: { id: str
       <div className="flex-1 p-6 space-y-4">
         {item.products_mf && (
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <ProductImage images={item.products_mf.image_urls || []} alt={item.products_mf.name} />
             <h2 className="text-lg font-bold text-gray-900">{item.products_mf.name}</h2>
             {item.products_mf.model && (
               <p className="text-gray-500 text-sm mt-0.5">รุ่น {item.products_mf.model}</p>
