@@ -6,6 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 const menuItems = [
+  { href: "/stock-in/expected", label: "รายการที่รอรับเข้า", icon: "📋" },
   { href: "/customers", label: "รายชื่อลูกค้า", icon: "👥" },
   { href: "/warranty/register", label: "ลงทะเบียนประกัน", icon: "✍️" },
   { href: "/warranty/generate", label: "สร้าง QR Batch", icon: "🏷️" },
