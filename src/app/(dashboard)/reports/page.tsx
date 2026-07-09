@@ -2,38 +2,60 @@ import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/Card";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
+import { ReportDateFilter } from "./ReportDateFilter";
 
-async function getReportData() {
+async function getReportData(from?: string, to?: string) {
   const supabase = createClient();
-  const [stockInRes, stockOutRes] = await Promise.all([
-    supabase
-      .from("stock_in_mf")
-      .select("*, products_mf(name, model, unit)")
-      .order("received_date", { ascending: false })
-      .limit(200),
-    supabase
-      .from("stock_out_mf")
-      .select("*, products_mf(name, model, unit)")
-      .order("sold_date", { ascending: false })
-      .limit(200),
-  ]);
+
+  let stockInQuery = supabase
+    .from("stock_in_mf")
+    .select("*, products_mf(name, model, unit)")
+    .order("received_date", { ascending: false });
+  let stockOutQuery = supabase
+    .from("stock_out_mf")
+    .select("*, products_mf(name, model, unit)")
+    .order("sold_date", { ascending: false });
+
+  if (from) {
+    stockInQuery = stockInQuery.gte("received_date", from);
+    stockOutQuery = stockOutQuery.gte("sold_date", from);
+  }
+  if (to) {
+    stockInQuery = stockInQuery.lte("received_date", to);
+    stockOutQuery = stockOutQuery.lte("sold_date", to);
+  }
+  if (!from && !to) {
+    stockInQuery = stockInQuery.limit(200);
+    stockOutQuery = stockOutQuery.limit(200);
+  }
+
+  const [stockInRes, stockOutRes] = await Promise.all([stockInQuery, stockOutQuery]);
   return {
     stockIn: stockInRes.data ?? [],
     stockOut: stockOutRes.data ?? [],
   };
 }
 
-export default async function ReportsPage() {
-  const { stockIn, stockOut } = await getReportData();
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams: { from?: string; to?: string };
+}) {
+  const { stockIn, stockOut } = await getReportData(searchParams.from, searchParams.to);
 
   const totalIn = stockIn.reduce((s: number, i: any) => s + i.quantity, 0);
   const totalOut = stockOut.reduce((s: number, i: any) => s + i.quantity, 0);
+  const isFiltered = Boolean(searchParams.from || searchParams.to);
+  const historyLabel = isFiltered ? "ประวัติรับเข้า" : "ประวัติรับเข้า (ล่าสุด)";
+  const historyOutLabel = isFiltered ? "ประวัติขายออก" : "ประวัติขายออก (ล่าสุด)";
 
   return (
     <div className="p-4 space-y-6 max-w-2xl mx-auto w-full">
       <div className="pt-2">
         <h1 className="text-xl font-bold text-gray-900">รายงาน</h1>
       </div>
+
+      <ReportDateFilter />
 
       <div className="grid grid-cols-2 gap-3">
         <Card>
@@ -49,9 +71,9 @@ export default async function ReportsPage() {
       </div>
 
       <div>
-        <h2 className="font-semibold text-gray-900 mb-3">ประวัติรับเข้า (ล่าสุด)</h2>
+        <h2 className="font-semibold text-gray-900 mb-3">{historyLabel}</h2>
         <div className="space-y-2">
-          {stockIn.slice(0, 20).map((item: any) => (
+          {(isFiltered ? stockIn : stockIn.slice(0, 20)).map((item: any) => (
             <Link key={item.id} href={`/stock-in/${item.id}`}>
               <Card className="py-2.5 active:scale-95 transition-transform">
                 <div className="flex justify-between items-center text-sm">
@@ -67,13 +89,16 @@ export default async function ReportsPage() {
               </Card>
             </Link>
           ))}
+          {isFiltered && stockIn.length === 0 && (
+            <p className="text-sm text-gray-400 text-center py-4">ไม่พบรายการในช่วงวันที่นี้</p>
+          )}
         </div>
       </div>
 
       <div>
-        <h2 className="font-semibold text-gray-900 mb-3">ประวัติขายออก (ล่าสุด)</h2>
+        <h2 className="font-semibold text-gray-900 mb-3">{historyOutLabel}</h2>
         <div className="space-y-2">
-          {stockOut.slice(0, 20).map((item: any) => (
+          {(isFiltered ? stockOut : stockOut.slice(0, 20)).map((item: any) => (
             <Link key={item.id} href={`/stock-out/${item.id}`}>
               <Card className="py-2.5 active:scale-95 transition-transform">
                 <div className="flex justify-between items-center text-sm">
@@ -91,6 +116,9 @@ export default async function ReportsPage() {
               </Card>
             </Link>
           ))}
+          {isFiltered && stockOut.length === 0 && (
+            <p className="text-sm text-gray-400 text-center py-4">ไม่พบรายการในช่วงวันที่นี้</p>
+          )}
         </div>
       </div>
     </div>
