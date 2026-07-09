@@ -15,6 +15,7 @@ interface Product {
   unit: string;
   current_stock: number;
   default_warranty_months: number;
+  image_urls?: string[];
 }
 
 export function StockInForm({
@@ -134,9 +135,22 @@ export function StockInForm({
       </Select>
 
       {selectedProduct && (
-        <p className="text-sm text-gray-500">
-          สต็อกปัจจุบัน: <strong className="text-gray-900">{selectedProduct.current_stock} {selectedProduct.unit}</strong>
-        </p>
+        <div className="flex items-center gap-3 rounded-xl bg-gray-50 px-3 py-2.5">
+          {selectedProduct.image_urls?.[0] ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={selectedProduct.image_urls[0]} alt={selectedProduct.name} className="h-14 max-w-20 rounded-lg object-contain shrink-0 bg-white" />
+          ) : (
+            <div className="w-14 h-14 rounded-lg bg-gray-200 flex items-center justify-center shrink-0 text-xl shrink-0">📦</div>
+          )}
+          <div className="min-w-0">
+            <p className="font-medium text-gray-900 text-sm truncate">
+              {selectedProduct.name}{selectedProduct.model ? ` (${selectedProduct.model})` : ""}
+            </p>
+            <p className="text-sm text-gray-500">
+              สต็อกปัจจุบัน: <strong className="text-gray-900">{selectedProduct.current_stock} {selectedProduct.unit}</strong>
+            </p>
+          </div>
+        </div>
       )}
 
       {isSerialized ? (
