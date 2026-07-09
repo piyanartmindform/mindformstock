@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import QRCode from "qrcode";
 import { PrintButton } from "@/components/ui/PrintButton";
-import Link from "next/link";
 
 async function getCodes(batchId: string) {
   const supabase = createClient();
@@ -84,12 +83,6 @@ export default async function PrintPage({
           <p className="text-xs text-gray-500 mt-0.5">กระดาษ E-128 (21×17mm) · 10 คอลัมน์</p>
         </div>
         <div className="flex gap-2">
-          <Link
-            href="/warranty/generate"
-            className="h-10 px-4 rounded-xl border border-gray-300 text-sm text-gray-700 flex items-center"
-          >
-            สร้างใหม่
-          </Link>
           <PrintButton label="🖨️ พิมพ์" />
         </div>
       </div>

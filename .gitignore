@@ -31,6 +31,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# legacy data export (contains customer PII)
+/old data/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

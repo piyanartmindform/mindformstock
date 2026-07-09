@@ -32,7 +32,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
     <div className="p-4 space-y-5 max-w-2xl mx-auto w-full">
       <div className="pt-2">
         <Link href="/products" className="text-sm text-brand mb-2 block">← สินค้าทั้งหมด</Link>
-        {p.image_url && <ProductImage src={p.image_url} alt={p.name} />}
+        {p.image_urls?.length > 0 && <ProductImage images={p.image_urls} alt={p.name} />}
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-xl font-bold text-gray-900">{p.name}</h1>

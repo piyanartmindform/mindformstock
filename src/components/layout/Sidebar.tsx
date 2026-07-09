@@ -10,6 +10,7 @@ const navItems = [
   { href: "/stock-in", label: "รับสินค้าเข้า", icon: "📥" },
   { href: "/stock-out", label: "ขายออก", icon: "🛒" },
   { href: "/warranty", label: "QR / ประกัน", icon: "🔲" },
+  { href: "/customers", label: "ลูกค้า", icon: "👥" },
   { href: "/reports", label: "รายงาน", icon: "📊" },
   { href: "/settings", label: "ตั้งค่า", icon: "⚙️" },
 ];

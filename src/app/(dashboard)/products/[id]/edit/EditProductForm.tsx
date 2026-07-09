@@ -13,7 +13,7 @@ export function EditProductForm({ product, categories }: { product: Product; cat
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [imageUrl, setImageUrl] = useState(product.image_url ?? "");
+  const [imageUrls, setImageUrls] = useState<string[]>(product.image_urls ?? []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -30,7 +30,7 @@ export function EditProductForm({ product, categories }: { product: Product; cat
       unit: fd.get("unit") as string || "ชิ้น",
       min_stock_level: Number(fd.get("min_stock_level")) || 0,
       default_warranty_months: Math.round(Number(fd.get("default_warranty_years")) * 12) || 0,
-      image_url: imageUrl || null,
+      image_urls: imageUrls,
       updated_at: new Date().toISOString(),
     };
 
@@ -49,7 +49,7 @@ export function EditProductForm({ product, categories }: { product: Product; cat
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 pb-28">
-      <ImageUpload currentUrl={product.image_url} onUpload={setImageUrl} />
+      <ImageUpload value={imageUrls} onChange={setImageUrls} />
       <Input label="ชื่อสินค้า *" name="name" required defaultValue={product.name} />
 
       <Select label="หมวดหมู่" name="category_id" defaultValue={product.category_id ?? ""}>

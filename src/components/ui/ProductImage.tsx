@@ -2,24 +2,33 @@
 
 import { useState } from "react";
 
-export function ProductImage({ src, alt }: { src: string; alt: string }) {
-  const [open, setOpen] = useState(false);
+export function ProductImage({ images, alt }: { images: string[]; alt: string }) {
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  if (!images || images.length === 0) return null;
 
   return (
     <>
-      <img
-        src={src}
-        alt={alt}
-        onClick={() => setOpen(true)}
-        className="w-40 h-40 object-cover rounded-2xl mb-4 mx-auto cursor-zoom-in"
-      />
-      {open && (
+      <div className="flex gap-2 mb-4 overflow-x-auto">
+        {images.map((src, i) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={i}
+            src={src}
+            alt={`${alt} ${i + 1}`}
+            onClick={() => setOpenIndex(i)}
+            className="h-40 max-w-[70vw] rounded-2xl object-contain cursor-zoom-in shrink-0 bg-gray-50"
+          />
+        ))}
+      </div>
+      {openIndex !== null && (
         <div
           className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
-          onClick={() => setOpen(false)}
+          onClick={() => setOpenIndex(null)}
         >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={src}
+            src={images[openIndex]}
             alt={alt}
             className="max-w-full max-h-full rounded-2xl object-contain"
           />

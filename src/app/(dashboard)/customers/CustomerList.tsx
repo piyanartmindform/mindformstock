@@ -4,7 +4,6 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/Card";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 interface Customer {
   id: string;
@@ -22,7 +21,6 @@ export function CustomerList({ customers: initial }: { customers: Customer[] }) 
   const [newNotes, setNewNotes] = useState("");
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState("");
-  const router = useRouter();
 
   const filtered = query.trim()
     ? customers.filter((c) => c.name.toLowerCase().includes(query.toLowerCase()))
@@ -50,13 +48,6 @@ export function CustomerList({ customers: initial }: { customers: Customer[] }) 
     setNewName("");
     setNewNotes("");
     setShowAdd(false);
-  }
-
-  async function handleDelete(id: string, name: string) {
-    if (!confirm(`ลบ "${name}" ออกจากรายชื่อ?`)) return;
-    const supabase = createClient();
-    await supabase.from("customers_mf").delete().eq("id", id);
-    setCustomers((prev) => prev.filter((c) => c.id !== id));
   }
 
   return (
@@ -119,31 +110,20 @@ export function CustomerList({ customers: initial }: { customers: Customer[] }) 
       ) : (
         <div className="space-y-2">
           {filtered.map((c) => (
-            <Card key={c.id} className="py-3">
-              <div className="flex items-center gap-3">
-                <Link href={`/customers/${encodeURIComponent(c.name)}`} className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 text-sm">{c.name}</p>
-                  {c.notes && <p className="text-xs text-gray-400 mt-0.5">{c.notes}</p>}
-                  <div className="flex gap-3 mt-1">
-                    {c.warrantyCount > 0 && (
-                      <span className="text-xs text-brand">{c.warrantyCount} ประกัน</span>
-                    )}
-                    {c.saleCount > 0 && (
-                      <span className="text-xs text-gray-400">{c.saleCount} รายการขาย</span>
-                    )}
-                  </div>
-                </Link>
-                <button
-                  onClick={() => handleDelete(c.id, c.name)}
-                  className="p-2 text-gray-400 hover:text-red-500 active:text-red-600 shrink-0"
-                  aria-label="ลบ"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </Card>
+            <Link key={c.id} href={`/customers/${encodeURIComponent(c.name)}`}>
+              <Card className="py-3 active:scale-95 transition-transform">
+                <p className="font-semibold text-gray-900 text-sm">{c.name}</p>
+                {c.notes && <p className="text-xs text-gray-400 mt-0.5">{c.notes}</p>}
+                <div className="flex gap-3 mt-1">
+                  {c.warrantyCount > 0 && (
+                    <span className="text-xs text-brand">{c.warrantyCount} ประกัน</span>
+                  )}
+                  {c.saleCount > 0 && (
+                    <span className="text-xs text-gray-400">{c.saleCount} รายการขาย</span>
+                  )}
+                </div>
+              </Card>
+            </Link>
           ))}
         </div>
       )}

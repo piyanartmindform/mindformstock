@@ -18,7 +18,7 @@ export interface Product {
   min_stock_level: number;
   default_warranty_months: number;
   current_stock: number;
-  image_url: string | null;
+  image_urls: string[];
   is_active: boolean;
   created_at: string;
   updated_at: string;

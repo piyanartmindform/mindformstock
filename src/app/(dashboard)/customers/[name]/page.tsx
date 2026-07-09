@@ -3,12 +3,13 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import Link from "next/link";
 import { formatDate, isWarrantyActive } from "@/lib/utils";
+import { CustomerDetailActions } from "./CustomerDetailActions";
 
 export default async function CustomerDetailPage({ params }: { params: { name: string } }) {
   const customerName = decodeURIComponent(params.name);
   const supabase = createClient();
 
-  const [warrantyRes, stockOutRes] = await Promise.all([
+  const [warrantyRes, stockOutRes, customerRes] = await Promise.all([
     supabase
       .from("qr_codes_mf")
       .select("id, code, purchase_date, warranty_expires_at, warranty_months, project_name, products_mf(name, model)")
@@ -20,20 +21,21 @@ export default async function CustomerDetailPage({ params }: { params: { name: s
       .select("id, sold_date, quantity, project_name, products_mf(name, model, unit)")
       .eq("customer_name", customerName)
       .order("sold_date", { ascending: false }),
+    supabase.from("customers_mf").select("id, name, notes").eq("name", customerName).maybeSingle(),
   ]);
 
   const warranties = warrantyRes.data ?? [];
   const stockOuts = stockOutRes.data ?? [];
+  const customer = customerRes.data;
 
   return (
     <div className="p-4 space-y-5 max-w-2xl mx-auto w-full">
-      <div className="pt-2">
-        <Link href="/customers" className="text-brand text-sm">← รายชื่อลูกค้า</Link>
-        <h1 className="text-xl font-bold text-gray-900 mt-2">{customerName}</h1>
-        <p className="text-gray-500 text-sm">
-          {warranties.length} ประกัน · {stockOuts.length} รายการขาย
-        </p>
-      </div>
+      <CustomerDetailActions
+        customerName={customerName}
+        warrantyCount={warranties.length}
+        stockOutCount={stockOuts.length}
+        customer={customer}
+      />
 
       {/* Warranties */}
       {warranties.length > 0 && (

@@ -13,7 +13,7 @@ export function NewProductForm({ categories }: { categories: Category[] }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -31,7 +31,7 @@ export function NewProductForm({ categories }: { categories: Category[] }) {
       min_stock_level: Number(fd.get("min_stock_level")) || 0,
       default_warranty_months: Math.round(Number(fd.get("default_warranty_years")) * 12) || 0,
       current_stock: 0,
-      image_url: imageUrl || null,
+      image_urls: imageUrls,
       is_active: true,
     };
 
@@ -50,7 +50,7 @@ export function NewProductForm({ categories }: { categories: Category[] }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 pb-28">
-      <ImageUpload onUpload={setImageUrl} />
+      <ImageUpload value={imageUrls} onChange={setImageUrls} />
       <Input label="ชื่อสินค้า *" name="name" required placeholder="เช่น มอเตอร์ไฟฟ้า" />
 
       <Select label="หมวดหมู่" name="category_id">

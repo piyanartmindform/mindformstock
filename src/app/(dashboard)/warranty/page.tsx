@@ -26,26 +26,12 @@ export default async function WarrantyPage() {
       </div>
 
       {/* Action buttons */}
-      <div className="grid grid-cols-2 gap-3">
-        <Link
-          href="/warranty/register"
-          className="flex items-center justify-center gap-2 h-12 rounded-2xl bg-brand text-white font-medium text-sm"
-        >
-          <span>✍️</span> ลงทะเบียนประกัน
-        </Link>
-        <Link
-          href="/warranty/generate"
-          className="flex items-center justify-center gap-2 h-12 rounded-2xl bg-gray-900 text-white font-medium text-sm"
-        >
-          <span>🏷️</span> สร้าง QR Batch
-        </Link>
-        <Link
-          href="/warranty/import"
-          className="col-span-2 flex items-center justify-center gap-2 h-10 rounded-2xl border border-gray-300 text-gray-700 font-medium text-sm"
-        >
-          <span>📥</span> นำเข้าข้อมูลจาก CSV
-        </Link>
-      </div>
+      <Link
+        href="/warranty/register"
+        className="flex items-center justify-center gap-2 h-12 rounded-2xl bg-brand text-white font-medium text-sm"
+      >
+        <span>✍️</span> ลงทะเบียนประกัน
+      </Link>
 
       <WarrantyList items={items} />
     </div>

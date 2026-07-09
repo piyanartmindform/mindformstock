@@ -8,8 +8,6 @@ import { createClient } from "@/lib/supabase/client";
 const menuItems = [
   { href: "/customers", label: "รายชื่อลูกค้า", icon: "👥" },
   { href: "/warranty/register", label: "ลงทะเบียนประกัน", icon: "✍️" },
-  { href: "/warranty/generate", label: "สร้าง QR Batch", icon: "🏷️" },
-  { href: "/warranty/import", label: "นำเข้าข้อมูลประกัน", icon: "📥" },
   { href: "/reports", label: "รายงาน", icon: "📊" },
   { href: "/settings", label: "ตั้งค่า", icon: "⚙️" },
   { href: "/settings/users", label: "จัดการ User", icon: "👤" },

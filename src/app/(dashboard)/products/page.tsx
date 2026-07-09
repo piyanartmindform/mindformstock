@@ -1,20 +1,25 @@
 import { createClient } from "@/lib/supabase/server";
-import { Badge } from "@/components/ui/Badge";
-import { Card } from "@/components/ui/Card";
 import Link from "next/link";
+import { ProductList } from "./ProductList";
 
-async function getProducts() {
+async function getData() {
   const supabase = createClient();
-  const { data } = await supabase
-    .from("products_mf")
-    .select("*, categories_mf(name)")
-    .eq("is_active", true)
-    .order("name");
-  return data ?? [];
+  const [productsRes, categoriesRes] = await Promise.all([
+    supabase
+      .from("products_mf")
+      .select("*, categories_mf(name)")
+      .eq("is_active", true)
+      .order("name"),
+    supabase.from("categories_mf").select("id, name").order("name"),
+  ]);
+  return {
+    products: productsRes.data ?? [],
+    categories: categoriesRes.data ?? [],
+  };
 }
 
 export default async function ProductsPage() {
-  const products = await getProducts();
+  const { products, categories } = await getData();
 
   return (
     <div className="p-4 space-y-4 max-w-4xl mx-auto w-full">
@@ -40,42 +45,7 @@ export default async function ProductsPage() {
           </Link>
         </div>
       ) : (
-        <div className="space-y-2">
-          {products.map((p: any) => {
-            const isLow = p.current_stock <= p.min_stock_level;
-            return (
-              <Link key={p.id} href={`/products/${p.id}`}>
-                <Card className="flex items-center gap-3 active:scale-95 transition-transform">
-                  {p.image_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.image_url} alt={p.name} className="w-14 h-14 rounded-xl object-cover shrink-0" />
-                  ) : (
-                    <div className="w-14 h-14 rounded-xl bg-gray-100 flex items-center justify-center shrink-0 text-2xl">📦</div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium text-gray-900 text-sm">{p.name}</span>
-                      {p.model && (
-                        <span className="text-xs text-gray-400">{p.model}</span>
-                      )}
-                    </div>
-                    {p.brand && <p className="text-xs text-gray-400 mt-0.5">{p.brand}</p>}
-                    {p.categories_mf?.name && (
-                      <Badge variant="info" className="mt-1">{p.categories_mf.name}</Badge>
-                    )}
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className={`text-xl font-bold ${isLow ? "text-red-500" : "text-gray-900"}`}>
-                      {p.current_stock}
-                    </p>
-                    <p className="text-xs text-gray-400">{p.unit}</p>
-                    {isLow && <Badge variant="warning" className="mt-1">ใกล้หมด</Badge>}
-                  </div>
-                </Card>
-              </Link>
-            );
-          })}
-        </div>
+        <ProductList products={products} categories={categories} />
       )}
     </div>
   );
