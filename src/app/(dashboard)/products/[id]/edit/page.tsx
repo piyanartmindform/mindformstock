@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { getCurrentUserRole } from "@/lib/auth";
 import { EditProductForm } from "./EditProductForm";
 
 async function getData(id: string) {
@@ -13,6 +14,9 @@ async function getData(id: string) {
 }
 
 export default async function EditProductPage({ params }: { params: { id: string } }) {
+  const role = await getCurrentUserRole();
+  if (role !== "admin") redirect(`/products/${params.id}`);
+
   const data = await getData(params.id);
   if (!data) notFound();
 

@@ -1,4 +1,6 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUserRole } from "@/lib/auth";
 import { NewProductForm } from "./NewProductForm";
 
 async function getCategories() {
@@ -8,6 +10,9 @@ async function getCategories() {
 }
 
 export default async function NewProductPage() {
+  const role = await getCurrentUserRole();
+  if (role !== "admin") redirect("/products");
+
   const categories = await getCategories();
   return (
     <div className="p-4 max-w-lg mx-auto w-full">

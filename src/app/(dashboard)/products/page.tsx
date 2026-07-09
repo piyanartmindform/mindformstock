@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import { getCurrentUserRole } from "@/lib/auth";
 import { ProductList } from "./ProductList";
 
 async function getData() {
@@ -19,7 +20,8 @@ async function getData() {
 }
 
 export default async function ProductsPage() {
-  const { products, categories } = await getData();
+  const [{ products, categories }, role] = await Promise.all([getData(), getCurrentUserRole()]);
+  const isAdmin = role === "admin";
 
   return (
     <div className="p-4 space-y-4 max-w-4xl mx-auto w-full">
@@ -28,21 +30,25 @@ export default async function ProductsPage() {
           <h1 className="text-xl font-bold text-gray-900">สินค้า</h1>
           <p className="text-gray-500 text-sm">{products.length} รายการ</p>
         </div>
-        <Link
-          href="/products/new"
-          className="h-10 px-4 bg-brand text-white rounded-xl text-sm font-medium flex items-center gap-1.5"
-        >
-          <span>+</span> เพิ่มสินค้า
-        </Link>
+        {isAdmin && (
+          <Link
+            href="/products/new"
+            className="h-10 px-4 bg-brand text-white rounded-xl text-sm font-medium flex items-center gap-1.5"
+          >
+            <span>+</span> เพิ่มสินค้า
+          </Link>
+        )}
       </div>
 
       {products.length === 0 ? (
         <div className="text-center py-16">
           <p className="text-4xl mb-3">📦</p>
           <p className="text-gray-500">ยังไม่มีสินค้า</p>
-          <Link href="/products/new" className="text-brand text-sm mt-2 inline-block">
-            + เพิ่มสินค้าใหม่
-          </Link>
+          {isAdmin && (
+            <Link href="/products/new" className="text-brand text-sm mt-2 inline-block">
+              + เพิ่มสินค้าใหม่
+            </Link>
+          )}
         </div>
       ) : (
         <ProductList products={products} categories={categories} />

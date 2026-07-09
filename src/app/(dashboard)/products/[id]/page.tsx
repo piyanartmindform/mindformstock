@@ -5,6 +5,8 @@ import { Card } from "@/components/ui/Card";
 import Link from "next/link";
 import { formatDateShort } from "@/lib/utils";
 import { ProductImage } from "@/components/ui/ProductImage";
+import { getCurrentUserRole } from "@/lib/auth";
+import { ProductDeleteButton } from "./ProductDeleteButton";
 
 async function getProductDetail(id: string) {
   const supabase = createClient();
@@ -22,11 +24,12 @@ async function getProductDetail(id: string) {
 }
 
 export default async function ProductDetailPage({ params }: { params: { id: string } }) {
-  const data = await getProductDetail(params.id);
+  const [data, role] = await Promise.all([getProductDetail(params.id), getCurrentUserRole()]);
   if (!data) notFound();
 
   const { product: p, stockIn, stockOut } = data;
   const isLow = p.current_stock <= p.min_stock_level;
+  const isAdmin = role === "admin";
 
   return (
     <div className="p-4 space-y-5 max-w-2xl mx-auto w-full">
@@ -38,7 +41,12 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
             <h1 className="text-xl font-bold text-gray-900">{p.name}</h1>
             {p.model && <p className="text-gray-500 text-sm">{p.brand ? `${p.brand} · ` : ""}{p.model}</p>}
           </div>
-          <Link href={`/products/${p.id}/edit`} className="text-sm text-brand underline mt-1 shrink-0 ml-3">แก้ไข</Link>
+          {isAdmin && (
+            <div className="flex items-center shrink-0 ml-3">
+              <Link href={`/products/${p.id}/edit`} className="text-sm text-brand underline mt-1">แก้ไข</Link>
+              <ProductDeleteButton productId={p.id} productName={p.name} />
+            </div>
+          )}
         </div>
       </div>
 
