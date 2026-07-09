@@ -26,6 +26,7 @@ export function NewProductForm({ categories }: { categories: Category[] }) {
       name: fd.get("name") as string,
       model: fd.get("model") || null,
       brand: fd.get("brand") || null,
+      supplier: fd.get("supplier") || null,
       description: fd.get("description") || null,
       unit: fd.get("unit") as string || "ชิ้น",
       min_stock_level: Number(fd.get("min_stock_level")) || 0,
@@ -64,6 +65,8 @@ export function NewProductForm({ categories }: { categories: Category[] }) {
         <Input label="รุ่น" name="model" placeholder="เช่น MX-200" />
         <Input label="ยี่ห้อ" name="brand" placeholder="เช่น SIEMENS" />
       </div>
+
+      <Input label="ซัพพลายเออร์" name="supplier" placeholder="ชื่อซัพพลายเออร์" />
 
       <Input label="หน่วย" name="unit" defaultValue="ชิ้น" placeholder="ชิ้น / ชุด / อัน" />
 

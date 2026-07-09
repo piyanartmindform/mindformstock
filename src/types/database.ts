@@ -13,6 +13,7 @@ export interface Product {
   name: string;
   model: string | null;
   brand: string | null;
+  supplier: string | null;
   description: string | null;
   unit: string;
   min_stock_level: number;

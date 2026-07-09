@@ -77,6 +77,12 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
             <span className="text-gray-500">หน่วย</span>
             <span className="font-medium">{p.unit}</span>
           </div>
+          {p.supplier && (
+            <div className="flex justify-between">
+              <span className="text-gray-500">ซัพพลายเออร์</span>
+              <span className="font-medium">{p.supplier}</span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span className="text-gray-500">ประกัน (default)</span>
             <span className="font-medium">

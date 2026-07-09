@@ -26,6 +26,7 @@ export function EditProductForm({ product, categories }: { product: Product; cat
       name: fd.get("name") as string,
       model: fd.get("model") || null,
       brand: fd.get("brand") || null,
+      supplier: fd.get("supplier") || null,
       description: fd.get("description") || null,
       unit: fd.get("unit") as string || "ชิ้น",
       min_stock_level: Number(fd.get("min_stock_level")) || 0,
@@ -63,6 +64,8 @@ export function EditProductForm({ product, categories }: { product: Product; cat
         <Input label="รุ่น" name="model" defaultValue={product.model ?? ""} />
         <Input label="ยี่ห้อ" name="brand" defaultValue={product.brand ?? ""} />
       </div>
+
+      <Input label="ซัพพลายเออร์" name="supplier" defaultValue={product.supplier ?? ""} placeholder="ชื่อซัพพลายเออร์" />
 
       <Input label="หน่วย" name="unit" defaultValue={product.unit} />
 

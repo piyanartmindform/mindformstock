@@ -75,7 +75,6 @@ export function StockInForm({
         product_id: selectedProductId,
         quantity,
         received_date: fd.get("received_date") as string,
-        supplier: fd.get("supplier") || null,
         notes: fd.get("notes") || null,
         created_by: user?.email ?? user?.id ?? null,
       })
@@ -185,8 +184,6 @@ export function StockInForm({
         required
         defaultValue={new Date().toISOString().split("T")[0]}
       />
-
-      <Input label="ซัพพลายเออร์" name="supplier" placeholder="ชื่อซัพพลายเออร์" />
 
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium text-gray-700">หมายเหตุ</label>
