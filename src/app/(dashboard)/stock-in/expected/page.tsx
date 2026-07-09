@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
+import { getCurrentUserRole } from "@/lib/auth";
 
 async function getExpected() {
   const supabase = createClient();
@@ -15,7 +16,7 @@ async function getExpected() {
 }
 
 export default async function ExpectedStockInPage() {
-  const items = await getExpected();
+  const [items, role] = await Promise.all([getExpected(), getCurrentUserRole()]);
   const open = items.filter((i: any) => i.status === "open");
   const closed = items.filter((i: any) => i.status === "closed");
 
@@ -27,12 +28,14 @@ export default async function ExpectedStockInPage() {
           <h1 className="text-xl font-bold text-gray-900">รายการที่รอรับเข้า</h1>
           <p className="text-gray-500 text-sm">{open.length} รายการค้างรับ</p>
         </div>
-        <Link
-          href="/stock-in/expected/new"
-          className="h-10 px-4 bg-brand text-white rounded-xl text-sm font-medium flex items-center gap-1.5"
-        >
-          + แจ้งล่วงหน้า
-        </Link>
+        {role === "admin" && (
+          <Link
+            href="/stock-in/expected/new"
+            className="h-10 px-4 bg-brand text-white rounded-xl text-sm font-medium flex items-center gap-1.5"
+          >
+            + แจ้งล่วงหน้า
+          </Link>
+        )}
       </div>
 
       {items.length === 0 ? (

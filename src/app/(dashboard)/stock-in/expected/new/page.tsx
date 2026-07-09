@@ -1,4 +1,6 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUserRole } from "@/lib/auth";
 import { NewExpectedForm } from "./NewExpectedForm";
 
 async function getProducts() {
@@ -12,6 +14,9 @@ async function getProducts() {
 }
 
 export default async function NewExpectedPage() {
+  const role = await getCurrentUserRole();
+  if (role !== "admin") redirect("/stock-in/expected");
+
   const products = await getProducts();
   return (
     <div className="p-4 max-w-lg mx-auto w-full">
