@@ -13,8 +13,17 @@ async function getStockInHistory() {
   return data ?? [];
 }
 
+async function getOpenExpectedCount() {
+  const supabase = createClient();
+  const { count } = await supabase
+    .from("stock_in_expected_mf")
+    .select("*", { count: "exact", head: true })
+    .eq("status", "open");
+  return count ?? 0;
+}
+
 export default async function StockInPage() {
-  const items = await getStockInHistory();
+  const [items, openExpectedCount] = await Promise.all([getStockInHistory(), getOpenExpectedCount()]);
 
   return (
     <div className="p-4 space-y-4 max-w-2xl mx-auto w-full">
@@ -30,6 +39,20 @@ export default async function StockInPage() {
           + รับเข้า
         </Link>
       </div>
+
+      <Link href="/stock-in/expected">
+        <Card className="py-3 flex items-center justify-between active:scale-95 transition-transform">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">📋</span>
+            <span className="text-sm font-medium text-gray-900">รายการที่รอรับเข้า</span>
+          </div>
+          {openExpectedCount > 0 ? (
+            <span className="text-xs font-semibold text-white bg-brand rounded-full px-2.5 py-1">{openExpectedCount} ค้างรับ</span>
+          ) : (
+            <span className="text-xs text-gray-400">ดูทั้งหมด →</span>
+          )}
+        </Card>
+      </Link>
 
       {items.length === 0 ? (
         <div className="text-center py-16">

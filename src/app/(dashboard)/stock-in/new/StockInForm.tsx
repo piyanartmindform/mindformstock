@@ -18,15 +18,26 @@ interface Product {
   image_urls?: string[];
 }
 
+interface Expected {
+  id: string;
+  product_id: string;
+  expected_quantity: number;
+  received_quantity: number;
+  status: "open" | "closed";
+}
+
 export function StockInForm({
   products,
   defaultProductId,
+  expected,
 }: {
   products: Product[];
   defaultProductId?: string;
+  expected?: Expected | null;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [closing, setClosing] = useState(false);
   const [error, setError] = useState("");
   const [selectedProductId, setSelectedProductId] = useState(defaultProductId ?? "");
   const [scannedCodes, setScannedCodes] = useState<string[]>([]);
@@ -34,6 +45,7 @@ export function StockInForm({
 
   const selectedProduct = products.find((p) => p.id === selectedProductId);
   const isSerialized = (selectedProduct?.default_warranty_months ?? 0) > 0;
+  const remaining = expected ? Math.max(0, expected.expected_quantity - expected.received_quantity) : null;
 
   function handleProductChange(id: string) {
     setSelectedProductId(id);
@@ -77,6 +89,7 @@ export function StockInForm({
         received_date: fd.get("received_date") as string,
         notes: fd.get("notes") || null,
         created_by: user?.email ?? user?.id ?? null,
+        stock_in_expected_id: expected?.id ?? null,
       })
       .select()
       .single();
@@ -102,8 +115,12 @@ export function StockInForm({
     // Update current_stock
     await supabase.rpc("increment_stock", { p_id: selectedProductId, amount: quantity });
 
+    if (expected) {
+      await supabase.rpc("increment_expected_received", { p_id: expected.id, amount: quantity });
+    }
+
     if (isSerialized) {
-      // ทำงานต่อเนื่อง: อยู่หน้าเดิม คงสินค้า/วันที่/ซัพพลายเออร์ไว้ เคลียร์แค่รายการที่สแกน
+      // ทำงานต่อเนื่อง: อยู่หน้าเดิม คงสินค้า/วันที่ไว้ เคลียร์แค่รายการที่สแกน
       // เพื่อสแกนล็อตถัดไปของสินค้าเดียวกันได้ทันที ถ้าจะเปลี่ยนสินค้าค่อยเลือกใหม่เอง
       setScannedCodes([]);
       setSavedCount(quantity);
@@ -116,12 +133,37 @@ export function StockInForm({
     router.refresh();
   }
 
+  async function handleCloseExpected() {
+    if (!expected) return;
+    if (!confirm("ปิดรายการนี้ทั้งที่ยังรับไม่ครบ?")) return;
+    setClosing(true);
+    const supabase = createClient();
+    await supabase
+      .from("stock_in_expected_mf")
+      .update({ status: "closed", closed_at: new Date().toISOString() })
+      .eq("id", expected.id);
+    router.push("/stock-in/expected");
+    router.refresh();
+  }
+
+  if (expected?.status === "closed") {
+    return (
+      <div className="text-center py-12 space-y-3">
+        <p className="text-4xl">✓</p>
+        <p className="text-gray-900 font-medium">รายการนี้ปิดแล้ว</p>
+        <p className="text-gray-500 text-sm">รับไปแล้ว {expected.received_quantity}/{expected.expected_quantity}</p>
+        <a href="/stock-in/expected" className="text-brand text-sm inline-block mt-2">← กลับไปรายการที่รอรับ</a>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4 pb-28">
       <Select
         label="สินค้า *"
         value={selectedProductId}
         onChange={(e) => handleProductChange(e.target.value)}
+        disabled={!!expected}
         required
       >
         <option value="">-- เลือกสินค้า --</option>
@@ -148,6 +190,29 @@ export function StockInForm({
               สต็อกปัจจุบัน: <strong className="text-gray-900">{selectedProduct.current_stock} {selectedProduct.unit}</strong>
             </p>
           </div>
+        </div>
+      )}
+
+      {expected && remaining !== null && (
+        <div className="rounded-xl bg-brand/5 border border-brand/20 px-4 py-3">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-600">รับแล้ว {expected.received_quantity}/{expected.expected_quantity}</span>
+            <span className="font-semibold text-brand">เหลืออีก {remaining}</span>
+          </div>
+          <div className="h-1.5 rounded-full bg-gray-200 mt-2 overflow-hidden">
+            <div
+              className="h-full bg-brand"
+              style={{ width: `${Math.min(100, Math.round((expected.received_quantity / expected.expected_quantity) * 100))}%` }}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={handleCloseExpected}
+            disabled={closing}
+            className="text-xs text-red-500 mt-2 disabled:opacity-50"
+          >
+            ปิดรายการ (รับไม่ครบ)
+          </button>
         </div>
       )}
 
