@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import jsQR from "jsqr";
 
 interface QrScannerProps {
   onScan: (code: string) => void;
@@ -29,6 +30,8 @@ export function QrScanner({ onScan, onClose }: QrScannerProps) {
     let stream: MediaStream | null = null;
     let animFrame: number;
     let stopped = false;
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
 
     async function start() {
       try {
@@ -39,21 +42,17 @@ export function QrScanner({ onScan, onClose }: QrScannerProps) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
 
-        // @ts-ignore
-        if (!("BarcodeDetector" in window)) {
-          setError("เบราว์เซอร์นี้ไม่รองรับสแกน QR — กรุณาพิมพ์รหัสเอง");
-          return;
-        }
-
-        // @ts-ignore
-        const detector = new BarcodeDetector({ formats: ["qr_code"] });
-
-        const detect = async (): Promise<void> => {
-          if (stopped || !videoRef.current) return;
-          try {
-            const barcodes = await detector.detect(videoRef.current);
-            if (barcodes.length > 0) {
-              const code = extractCode(barcodes[0].rawValue);
+        const detect = () => {
+          if (stopped || !videoRef.current || !ctx) return;
+          const video = videoRef.current;
+          if (video.readyState === video.HAVE_ENOUGH_DATA && video.videoWidth > 0) {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const result = jsQR(imageData.data, imageData.width, imageData.height);
+            if (result?.data) {
+              const code = extractCode(result.data);
               if (code) {
                 stopped = true;
                 setScanning(false);
@@ -62,7 +61,7 @@ export function QrScanner({ onScan, onClose }: QrScannerProps) {
                 return;
               }
             }
-          } catch {}
+          }
           animFrame = requestAnimationFrame(detect);
         };
         detect();

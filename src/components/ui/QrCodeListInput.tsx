@@ -16,7 +16,6 @@ export function QrCodeListInput({ label, codes, onChange, validate }: QrCodeList
   const [error, setError] = useState("");
   const [checking, setChecking] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
-  const [scanKey, setScanKey] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function addCode(raw: string) {
@@ -50,7 +49,7 @@ export function QrCodeListInput({ label, codes, onChange, validate }: QrCodeList
 
   function handleScan(code: string) {
     addCode(code);
-    setScanKey((k) => k + 1); // remount scanner to keep camera scanning continuously
+    setShowScanner(false); // ปิดกล้องทันทีหลังสแกน 1 ดวง — ต้องกด "สแกน" ใหม่ทีละครั้งต่อสินค้า
   }
 
   return (
@@ -108,7 +107,7 @@ export function QrCodeListInput({ label, codes, onChange, validate }: QrCodeList
       )}
 
       {showScanner && (
-        <QrScanner key={scanKey} onScan={handleScan} onClose={() => setShowScanner(false)} />
+        <QrScanner onScan={handleScan} onClose={() => setShowScanner(false)} />
       )}
     </div>
   );
