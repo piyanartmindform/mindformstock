@@ -13,7 +13,6 @@ const menuItems = [
   { href: "/warranty/generate", label: "สร้าง QR Batch", icon: "🏷️", adminOnly: true },
   { href: "/reports", label: "รายงาน", icon: "📊" },
   { href: "/settings", label: "ตั้งค่า", icon: "⚙️" },
-  { href: "/settings/users", label: "จัดการ User", icon: "👤" },
 ];
 
 export function BurgerMenu({ isAdmin }: { isAdmin: boolean }) {

@@ -54,8 +54,6 @@ export function CategoryManager({ initialCategories }: { initialCategories: Cate
 
   return (
     <div className="space-y-4">
-      <h2 className="font-semibold text-gray-900">หมวดหมู่สินค้า</h2>
-
       <div className="flex gap-2">
         <Input
           value={newName}

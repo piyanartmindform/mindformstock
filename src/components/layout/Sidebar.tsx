@@ -17,7 +17,6 @@ const navItems = [
   { href: "/customers", label: "ลูกค้า", icon: "👥" },
   { href: "/reports", label: "รายงาน", icon: "📊" },
   { href: "/settings", label: "ตั้งค่า", icon: "⚙️" },
-  { href: "/settings/users", label: "จัดการ User", icon: "👤" },
 ];
 
 export function Sidebar({ isAdmin }: { isAdmin: boolean }) {
