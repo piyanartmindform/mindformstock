@@ -19,15 +19,28 @@ interface Product {
   image_urls?: string[];
 }
 
+interface Expected {
+  id: string;
+  product_id: string;
+  expected_quantity: number;
+  sold_quantity: number;
+  customer_name: string;
+  project_name: string | null;
+  status: "open" | "closed";
+}
+
 export function StockOutForm({
   products,
   defaultProductId,
+  expected,
 }: {
   products: Product[];
   defaultProductId?: string;
+  expected?: Expected | null;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [closing, setClosing] = useState(false);
   const [error, setError] = useState("");
   const [selectedProductId, setSelectedProductId] = useState(defaultProductId ?? "");
   const [scannedCodes, setScannedCodes] = useState<string[]>([]);
@@ -35,6 +48,7 @@ export function StockOutForm({
   const selectedProduct = products.find((p) => p.id === selectedProductId);
   const isSerialized = (selectedProduct?.default_warranty_months ?? 0) > 0;
   const [warrantyYears, setWarrantyYears] = useState(0);
+  const remaining = expected ? Math.max(0, expected.expected_quantity - expected.sold_quantity) : null;
 
   function handleProductChange(id: string) {
     setSelectedProductId(id);
@@ -68,8 +82,8 @@ export function StockOutForm({
     const fd = new FormData(e.currentTarget);
     const quantity = isSerialized ? scannedCodes.length : Number(fd.get("quantity"));
     const soldDate = fd.get("sold_date") as string;
-    const customerName = fd.get("customer_name") as string;
-    const projectName = fd.get("project_name") as string || null;
+    const customerName = expected ? expected.customer_name : (fd.get("customer_name") as string);
+    const projectName = expected ? expected.project_name : ((fd.get("project_name") as string) || null);
 
     if (quantity > (selectedProduct?.current_stock ?? 0)) {
       setError(`สต็อกไม่พอ (มี ${selectedProduct?.current_stock} ${selectedProduct?.unit})`);
@@ -92,6 +106,7 @@ export function StockOutForm({
         price: fd.get("price") ? Number(fd.get("price")) : null,
         notes: fd.get("notes") || null,
         created_by: user?.email ?? user?.id ?? null,
+        stock_out_expected_id: expected?.id ?? null,
       })
       .select()
       .single();
@@ -135,8 +150,36 @@ export function StockOutForm({
     // 2. Decrement stock
     await supabase.rpc("decrement_stock", { p_id: selectedProductId, amount: quantity });
 
+    if (expected) {
+      await supabase.rpc("increment_expected_sold", { p_id: expected.id, amount: quantity });
+    }
+
     router.push("/");
     router.refresh();
+  }
+
+  async function handleCloseExpected() {
+    if (!expected) return;
+    if (!confirm("ปิดรายการนี้ทั้งที่ยังส่งไม่ครบ?")) return;
+    setClosing(true);
+    const supabase = createClient();
+    await supabase
+      .from("stock_out_expected_mf")
+      .update({ status: "closed", closed_at: new Date().toISOString() })
+      .eq("id", expected.id);
+    router.push("/stock-out/expected");
+    router.refresh();
+  }
+
+  if (expected?.status === "closed") {
+    return (
+      <div className="text-center py-12 space-y-3">
+        <p className="text-4xl">✓</p>
+        <p className="text-gray-900 font-medium">รายการนี้ปิดแล้ว</p>
+        <p className="text-gray-500 text-sm">ส่งไปแล้ว {expected.sold_quantity}/{expected.expected_quantity}</p>
+        <a href="/stock-out/expected" className="text-brand text-sm inline-block mt-2">← กลับไปรายการที่รอส่ง</a>
+      </div>
+    );
   }
 
   return (
@@ -145,6 +188,7 @@ export function StockOutForm({
         label="สินค้า *"
         value={selectedProductId}
         onChange={(e) => handleProductChange(e.target.value)}
+        disabled={!!expected}
         required
       >
         <option value="">-- เลือกสินค้า --</option>
@@ -171,6 +215,32 @@ export function StockOutForm({
               สต็อกคงเหลือ: <strong className={selectedProduct.current_stock === 0 ? "text-red-500" : "text-gray-900"}>{selectedProduct.current_stock} {selectedProduct.unit}</strong>
             </p>
           </div>
+        </div>
+      )}
+
+      {expected && remaining !== null && (
+        <div className="rounded-xl bg-brand/5 border border-brand/20 px-4 py-3">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-600">ส่งแล้ว {expected.sold_quantity}/{expected.expected_quantity}</span>
+            <span className="font-semibold text-brand">เหลืออีก {remaining}</span>
+          </div>
+          <div className="h-1.5 rounded-full bg-gray-200 mt-2 overflow-hidden">
+            <div
+              className="h-full bg-brand"
+              style={{ width: `${Math.min(100, Math.round((expected.sold_quantity / expected.expected_quantity) * 100))}%` }}
+            />
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            ลูกค้า: {expected.customer_name}{expected.project_name ? ` · ${expected.project_name}` : ""}
+          </p>
+          <button
+            type="button"
+            onClick={handleCloseExpected}
+            disabled={closing}
+            className="text-xs text-red-500 mt-2 disabled:opacity-50"
+          >
+            ปิดรายการ (ส่งไม่ครบ)
+          </button>
         </div>
       )}
 
@@ -202,8 +272,12 @@ export function StockOutForm({
         defaultValue={new Date().toISOString().split("T")[0]}
       />
 
-      <CustomerCombobox label="ชื่อลูกค้า" name="customer_name" required />
-      <Input label="ชื่อโปรเจค" name="project_name" placeholder="ชื่อโครงการ (ถ้ามี)" />
+      {!expected && (
+        <>
+          <CustomerCombobox label="ชื่อลูกค้า" name="customer_name" required />
+          <Input label="ชื่อโปรเจค" name="project_name" placeholder="ชื่อโครงการ (ถ้ามี)" />
+        </>
+      )}
 
       {isSerialized && (
         <div className="flex flex-col gap-1.5">

@@ -13,8 +13,17 @@ async function getStockOutHistory() {
   return data ?? [];
 }
 
+async function getOpenExpectedCount() {
+  const supabase = createClient();
+  const { count } = await supabase
+    .from("stock_out_expected_mf")
+    .select("*", { count: "exact", head: true })
+    .eq("status", "open");
+  return count ?? 0;
+}
+
 export default async function StockOutPage() {
-  const items = await getStockOutHistory();
+  const [items, openExpectedCount] = await Promise.all([getStockOutHistory(), getOpenExpectedCount()]);
 
   return (
     <div className="p-4 space-y-4 max-w-2xl mx-auto w-full">
@@ -30,6 +39,20 @@ export default async function StockOutPage() {
           + ขายออก
         </Link>
       </div>
+
+      <Link href="/stock-out/expected">
+        <Card className="py-3 flex items-center justify-between active:scale-95 transition-transform">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">📋</span>
+            <span className="text-sm font-medium text-gray-900">รายการที่รอส่งออก</span>
+          </div>
+          {openExpectedCount > 0 ? (
+            <span className="text-xs font-semibold text-white bg-brand rounded-full px-2.5 py-1">{openExpectedCount} ค้างส่ง</span>
+          ) : (
+            <span className="text-xs text-gray-400">ดูทั้งหมด →</span>
+          )}
+        </Card>
+      </Link>
 
       {items.length === 0 ? (
         <div className="text-center py-16">
