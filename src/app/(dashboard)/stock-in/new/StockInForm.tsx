@@ -76,7 +76,6 @@ export function StockInForm({
         quantity,
         received_date: fd.get("received_date") as string,
         supplier: fd.get("supplier") || null,
-        source_country: fd.get("source_country") || null,
         notes: fd.get("notes") || null,
         created_by: user?.email ?? user?.id ?? null,
       })
@@ -188,7 +187,6 @@ export function StockInForm({
       />
 
       <Input label="ซัพพลายเออร์" name="supplier" placeholder="ชื่อซัพพลายเออร์" />
-      <Input label="ประเทศต้นทาง" name="source_country" placeholder="เช่น Japan, China" />
 
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium text-gray-700">หมายเหตุ</label>

@@ -36,7 +36,11 @@ export function QrScanner({ onScan, onClose }: QrScannerProps) {
     async function start() {
       try {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" },
+          video: {
+            facingMode: "environment",
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
         });
         if (!videoRef.current || stopped) return;
         videoRef.current.srcObject = stream;
@@ -45,22 +49,29 @@ export function QrScanner({ onScan, onClose }: QrScannerProps) {
         const detect = () => {
           if (stopped || !videoRef.current || !ctx) return;
           const video = videoRef.current;
-          if (video.readyState === video.HAVE_ENOUGH_DATA && video.videoWidth > 0) {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const result = jsQR(imageData.data, imageData.width, imageData.height);
-            if (result?.data) {
-              const code = extractCode(result.data);
-              if (code) {
-                stopped = true;
-                setScanning(false);
-                if (stream) stream.getTracks().forEach((t) => t.stop());
-                onScan(code);
-                return;
+          try {
+            if (video.readyState === video.HAVE_ENOUGH_DATA && video.videoWidth > 0) {
+              canvas.width = video.videoWidth;
+              canvas.height = video.videoHeight;
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+              const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              const result = jsQR(imageData.data, imageData.width, imageData.height);
+              if (result?.data) {
+                const code = extractCode(result.data);
+                if (code) {
+                  stopped = true;
+                  setScanning(false);
+                  if (stream) stream.getTracks().forEach((t) => t.stop());
+                  onScan(code);
+                  return;
+                }
               }
             }
+          } catch (e) {
+            stopped = true;
+            setError(`เกิดข้อผิดพลาดตอนสแกน: ${e instanceof Error ? e.message : String(e)}`);
+            if (stream) stream.getTracks().forEach((t) => t.stop());
+            return;
           }
           animFrame = requestAnimationFrame(detect);
         };
