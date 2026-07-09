@@ -8,11 +8,15 @@ const navItems = [
   { href: "/", label: "Dashboard", icon: "🏠" },
   { href: "/products", label: "สินค้า", icon: "📦" },
   { href: "/stock-in", label: "รับสินค้าเข้า", icon: "📥" },
+  { href: "/stock-in/expected", label: "รายการที่รอรับเข้า", icon: "📋" },
   { href: "/stock-out", label: "ขายออก", icon: "🛒" },
   { href: "/warranty", label: "QR / ประกัน", icon: "🔲" },
+  { href: "/warranty/register", label: "ลงทะเบียนประกัน", icon: "✍️" },
+  { href: "/warranty/generate", label: "สร้าง QR Batch", icon: "🏷️" },
   { href: "/customers", label: "ลูกค้า", icon: "👥" },
   { href: "/reports", label: "รายงาน", icon: "📊" },
   { href: "/settings", label: "ตั้งค่า", icon: "⚙️" },
+  { href: "/settings/users", label: "จัดการ User", icon: "👤" },
 ];
 
 export function Sidebar() {
