@@ -48,6 +48,7 @@ export function StockOutForm({
   const [bookWarranty, setBookWarranty] = useState(false);
   const [warrantyCodes, setWarrantyCodes] = useState<string[]>([]);
   const [forceQuantityMode, setForceQuantityMode] = useState(false);
+  const [savedCount, setSavedCount] = useState<number | null>(null);
 
   const selectedProduct = products.find((p) => p.id === selectedProductId);
   const isSerialized = !forceQuantityMode && (selectedProduct?.default_warranty_months ?? 0) > 0;
@@ -61,6 +62,7 @@ export function StockOutForm({
     setWarrantyCodes([]);
     setForceQuantityMode(false);
     setError("");
+    setSavedCount(null);
     const p = products.find((x) => x.id === id);
     setWarrantyYears(p ? p.default_warranty_months / 12 : 0);
   }
@@ -104,6 +106,7 @@ export function StockOutForm({
       : (bookWarranty ? warrantyCodes.length : Number(quantityInput));
 
     setError("");
+    setSavedCount(null);
     setLoading(true);
 
     const quantity = soldQuantity;
@@ -212,6 +215,17 @@ export function StockOutForm({
       await supabase.rpc("increment_expected_sold", { p_id: expected.id, amount: quantity });
     }
 
+    if (isSerialized || (bookWarranty && warrantyCodes.length > 0)) {
+      // ทำงานต่อเนื่อง: อยู่หน้าเดิม คงสินค้า/ลูกค้าไว้ เคลียร์แค่รายการที่สแกน
+      // เพื่อสแกนชิ้นถัดไปของสินค้าเดียวกันได้ทันที ถ้าจะเปลี่ยนสินค้าค่อยเลือกใหม่เอง
+      setScannedCodes([]);
+      setWarrantyCodes([]);
+      setSavedCount(quantity);
+      setLoading(false);
+      router.refresh();
+      return;
+    }
+
     router.push("/");
     router.refresh();
   }
@@ -299,6 +313,12 @@ export function StockOutForm({
           >
             ปิดรายการ (ส่งไม่ครบ)
           </button>
+        </div>
+      )}
+
+      {savedCount !== null && (
+        <div className="rounded-xl bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
+          ✓ บันทึกขายออกแล้ว {savedCount} {selectedProduct?.unit} — สแกนชิ้นถัดไปของสินค้านี้ต่อได้เลย หรือเลือกสินค้าอื่นถ้าจะเปลี่ยน
         </div>
       )}
 
