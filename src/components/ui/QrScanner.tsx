@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import jsQR from "jsqr";
+import QrScannerLib from "qr-scanner";
 
 interface QrScannerProps {
   onScan: (code: string) => void;
@@ -27,66 +27,37 @@ export function QrScanner({ onScan, onClose }: QrScannerProps) {
   const [scanning, setScanning] = useState(true);
 
   useEffect(() => {
-    let stream: MediaStream | null = null;
-    let animFrame: number;
+    if (!videoRef.current) return;
     let stopped = false;
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
 
-    async function start() {
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: "environment",
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-          },
-        });
-        if (!videoRef.current || stopped) return;
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-
-        const detect = () => {
-          if (stopped || !videoRef.current || !ctx) return;
-          const video = videoRef.current;
-          try {
-            if (video.readyState === video.HAVE_ENOUGH_DATA && video.videoWidth > 0) {
-              canvas.width = video.videoWidth;
-              canvas.height = video.videoHeight;
-              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-              const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-              const result = jsQR(imageData.data, imageData.width, imageData.height);
-              if (result?.data) {
-                const code = extractCode(result.data);
-                if (code) {
-                  stopped = true;
-                  setScanning(false);
-                  if (stream) stream.getTracks().forEach((t) => t.stop());
-                  onScan(code);
-                  return;
-                }
-              }
-            }
-          } catch (e) {
-            stopped = true;
-            setError(`เกิดข้อผิดพลาดตอนสแกน: ${e instanceof Error ? e.message : String(e)}`);
-            if (stream) stream.getTracks().forEach((t) => t.stop());
-            return;
-          }
-          animFrame = requestAnimationFrame(detect);
-        };
-        detect();
-      } catch {
-        setError("ไม่สามารถเข้าถึงกล้องได้ — กรุณาอนุญาตการใช้กล้อง");
+    const scanner = new QrScannerLib(
+      videoRef.current,
+      (result) => {
+        if (stopped) return;
+        const code = extractCode(result.data);
+        if (code) {
+          stopped = true;
+          setScanning(false);
+          scanner.stop();
+          onScan(code);
+        }
+      },
+      {
+        preferredCamera: "environment",
+        highlightScanRegion: false,
+        highlightCodeOutline: false,
+        returnDetailedScanResult: true,
       }
-    }
+    );
 
-    start();
+    scanner.start().catch(() => {
+      setError("ไม่สามารถเข้าถึงกล้องได้ — กรุณาอนุญาตการใช้กล้อง");
+    });
 
     return () => {
       stopped = true;
-      if (stream) stream.getTracks().forEach((t) => t.stop());
-      cancelAnimationFrame(animFrame);
+      scanner.stop();
+      scanner.destroy();
     };
   }, [onScan]);
 
