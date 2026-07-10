@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/Badge";
 import Link from "next/link";
 import { formatDate, isWarrantyActive } from "@/lib/utils";
 import { CustomerDetailActions } from "./CustomerDetailActions";
+import { BranchManager } from "./BranchManager";
 
 export default async function CustomerDetailPage({ params }: { params: { name: string } }) {
   const customerName = decodeURIComponent(params.name);
@@ -28,6 +29,10 @@ export default async function CustomerDetailPage({ params }: { params: { name: s
   const stockOuts = stockOutRes.data ?? [];
   const customer = customerRes.data;
 
+  const branches = customer
+    ? (await supabase.from("customer_branches_mf").select("id, name").eq("customer_id", customer.id).order("name")).data ?? []
+    : [];
+
   return (
     <div className="p-4 space-y-5 max-w-2xl mx-auto w-full">
       <CustomerDetailActions
@@ -36,6 +41,8 @@ export default async function CustomerDetailPage({ params }: { params: { name: s
         stockOutCount={stockOuts.length}
         customer={customer}
       />
+
+      {customer && <BranchManager customerId={customer.id} initialBranches={branches} />}
 
       {/* Warranties */}
       {warranties.length > 0 && (
