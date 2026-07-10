@@ -130,13 +130,15 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
         ) : (
           <div className="space-y-2">
             {stockIn.map((s: any) => (
-              <Card key={s.id} className="py-3 flex justify-between items-center">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">+{s.quantity} {p.unit}</p>
-                  <p className="text-xs text-gray-400">{s.supplier || "-"}</p>
-                </div>
-                <p className="text-xs text-gray-400">{formatDateShort(s.received_date)}</p>
-              </Card>
+              <Link key={s.id} href={`/stock-in/${s.id}`}>
+                <Card className="py-3 flex justify-between items-center active:scale-95 transition-transform">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">+{s.quantity} {p.unit}</p>
+                    <p className="text-xs text-gray-400">{s.supplier || "-"}</p>
+                  </div>
+                  <p className="text-xs text-gray-400">{formatDateShort(s.received_date)}</p>
+                </Card>
+              </Link>
             ))}
           </div>
         )}
@@ -149,13 +151,15 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
         ) : (
           <div className="space-y-2">
             {stockOut.map((s: any) => (
-              <Card key={s.id} className="py-3 flex justify-between items-center">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">-{s.quantity} {p.unit}</p>
-                  <p className="text-xs text-gray-400">{s.customer_name}</p>
-                </div>
-                <p className="text-xs text-gray-400">{formatDateShort(s.sold_date)}</p>
-              </Card>
+              <Link key={s.id} href={`/stock-out/${s.id}`}>
+                <Card className="py-3 flex justify-between items-center active:scale-95 transition-transform">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">-{s.quantity} {p.unit}</p>
+                    <p className="text-xs text-gray-400">{s.customer_name}</p>
+                  </div>
+                  <p className="text-xs text-gray-400">{formatDateShort(s.sold_date)}</p>
+                </Card>
+              </Link>
             ))}
           </div>
         )}
