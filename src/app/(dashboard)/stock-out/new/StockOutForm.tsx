@@ -44,6 +44,9 @@ export function StockOutForm({
   const [error, setError] = useState("");
   const [selectedProductId, setSelectedProductId] = useState(defaultProductId ?? "");
   const [scannedCodes, setScannedCodes] = useState<string[]>([]);
+  const [quantityInput, setQuantityInput] = useState("");
+  const [bookWarranty, setBookWarranty] = useState(false);
+  const [warrantyCodes, setWarrantyCodes] = useState<string[]>([]);
 
   const selectedProduct = products.find((p) => p.id === selectedProductId);
   const isSerialized = (selectedProduct?.default_warranty_months ?? 0) > 0;
@@ -53,6 +56,8 @@ export function StockOutForm({
   function handleProductChange(id: string) {
     setSelectedProductId(id);
     setScannedCodes([]);
+    setBookWarranty(false);
+    setWarrantyCodes([]);
     setError("");
     const p = products.find((x) => x.id === id);
     setWarrantyYears(p ? p.default_warranty_months / 12 : 0);
@@ -72,15 +77,36 @@ export function StockOutForm({
     return undefined;
   }
 
+  async function validateUnusedCode(code: string): Promise<string | undefined> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("qr_codes_mf")
+      .select("status")
+      .eq("code", code)
+      .maybeSingle();
+    if (error) return error.message;
+    if (!data) return `ไม่พบรหัส ${code} ในระบบ`;
+    if (data.status !== "unused") return `รหัส ${code} ถูกใช้ไปแล้ว (สถานะ: ${data.status})`;
+    return undefined;
+  }
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!selectedProductId) { setError("กรุณาเลือกสินค้า"); return; }
     if (isSerialized && scannedCodes.length === 0) { setError("กรุณาสแกน QR สินค้าที่จะเอาออกอย่างน้อย 1 ดวง"); return; }
+
+    const fd = new FormData(e.currentTarget);
+    const soldQuantity = isSerialized ? scannedCodes.length : Number(quantityInput);
+
+    if (!isSerialized && bookWarranty && warrantyCodes.length !== soldQuantity) {
+      setError(`สแกน QR ประกันแล้ว ${warrantyCodes.length} ดวง แต่ขาย ${soldQuantity} ชิ้น กรุณาสแกนให้ครบเท่ากัน`);
+      return;
+    }
+
     setError("");
     setLoading(true);
 
-    const fd = new FormData(e.currentTarget);
-    const quantity = isSerialized ? scannedCodes.length : Number(fd.get("quantity"));
+    const quantity = soldQuantity;
     const soldDate = fd.get("sold_date") as string;
     const customerName = expected ? expected.customer_name : (fd.get("customer_name") as string);
     const projectName = expected ? expected.project_name : ((fd.get("project_name") as string) || null);
@@ -142,6 +168,38 @@ export function StockOutForm({
       if (qrError) { setError(qrError.message); setLoading(false); return; }
       if (!updated || updated.length !== scannedCodes.length) {
         setError("มีบางรหัสถูกใช้ไปแล้วระหว่างที่กรอกฟอร์ม กรุณาตรวจสอบรายการแล้วลองใหม่");
+        setLoading(false);
+        return;
+      }
+    } else if (bookWarranty && warrantyCodes.length > 0) {
+      const warrantyMonths = Math.round(warrantyYears * 12);
+      let warrantyExpiresAt: string | null = null;
+      if (warrantyMonths > 0) {
+        const d = new Date(soldDate);
+        d.setMonth(d.getMonth() + warrantyMonths);
+        warrantyExpiresAt = d.toISOString();
+      }
+
+      const { data: updated, error: qrError } = await supabase
+        .from("qr_codes_mf")
+        .update({
+          status: "registered",
+          product_id: selectedProductId,
+          customer_name: customerName,
+          project_name: projectName,
+          purchase_date: soldDate,
+          warranty_months: warrantyMonths,
+          warranty_expires_at: warrantyExpiresAt,
+          stock_out_id: stockOut.id,
+          registered_at: new Date().toISOString(),
+        })
+        .in("code", warrantyCodes)
+        .eq("status", "unused")
+        .select("code");
+
+      if (qrError) { setError(qrError.message); setLoading(false); return; }
+      if (!updated || updated.length !== warrantyCodes.length) {
+        setError("มีบางรหัส QR ประกันถูกใช้ไปแล้วระหว่างที่กรอกฟอร์ม สต็อกยังไม่ถูกตัด กรุณาตรวจสอบรายการแล้วลองใหม่");
         setLoading(false);
         return;
       }
@@ -252,16 +310,59 @@ export function StockOutForm({
           validate={validateInStockCode}
         />
       ) : (
-        <Input
-          label="จำนวนขาย *"
-          name="quantity"
-          type="number"
-          inputMode="numeric"
-          required
-          min="1"
-          max={selectedProduct?.current_stock}
-          placeholder="0"
-        />
+        <>
+          <Input
+            label="จำนวนขาย *"
+            name="quantity"
+            type="number"
+            inputMode="numeric"
+            required
+            min="1"
+            max={selectedProduct?.current_stock}
+            placeholder="0"
+            value={quantityInput}
+            onChange={(e) => setQuantityInput(e.target.value)}
+          />
+
+          <div className="rounded-xl border border-gray-200 p-3 space-y-3">
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <input
+                type="checkbox"
+                checked={bookWarranty}
+                onChange={(e) => {
+                  setBookWarranty(e.target.checked);
+                  if (!e.target.checked) setWarrantyCodes([]);
+                }}
+                className="w-4 h-4 rounded border-gray-300 text-brand focus:ring-brand"
+              />
+              สร้าง QR ประกันให้ด้วย
+            </label>
+
+            {bookWarranty && (
+              <>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-gray-700">ระยะประกัน (ปี)</label>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="0.5"
+                    value={warrantyYears}
+                    onChange={(e) => setWarrantyYears(Number(e.target.value))}
+                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand"
+                    placeholder="0 = ไม่มีประกัน"
+                  />
+                </div>
+                <QrCodeListInput
+                  label={`สแกน QR สติ๊กเกอร์ที่จะแปะ (ต้องเท่ากับจำนวนที่ขาย${quantityInput ? ` — ${warrantyCodes.length}/${quantityInput}` : ""})`}
+                  codes={warrantyCodes}
+                  onChange={setWarrantyCodes}
+                  validate={validateUnusedCode}
+                />
+              </>
+            )}
+          </div>
+        </>
       )}
 
       <Input
