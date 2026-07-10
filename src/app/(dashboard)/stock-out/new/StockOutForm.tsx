@@ -47,10 +47,11 @@ export function StockOutForm({
   const [quantityInput, setQuantityInput] = useState("");
   const [bookWarranty, setBookWarranty] = useState(false);
   const [warrantyCodes, setWarrantyCodes] = useState<string[]>([]);
+  const [forceQuantityMode, setForceQuantityMode] = useState(false);
 
   const selectedProduct = products.find((p) => p.id === selectedProductId);
-  const isSerialized = (selectedProduct?.default_warranty_months ?? 0) > 0;
-  const [warrantyYears, setWarrantyYears] = useState(0);
+  const isSerialized = !forceQuantityMode && (selectedProduct?.default_warranty_months ?? 0) > 0;
+  const [warrantyYears, setWarrantyYears] = useState(() => (selectedProduct?.default_warranty_months ?? 0) / 12);
   const remaining = expected ? Math.max(0, expected.expected_quantity - expected.sold_quantity) : null;
 
   function handleProductChange(id: string) {
@@ -58,6 +59,7 @@ export function StockOutForm({
     setScannedCodes([]);
     setBookWarranty(false);
     setWarrantyCodes([]);
+    setForceQuantityMode(false);
     setError("");
     const p = products.find((x) => x.id === id);
     setWarrantyYears(p ? p.default_warranty_months / 12 : 0);
@@ -94,14 +96,12 @@ export function StockOutForm({
     e.preventDefault();
     if (!selectedProductId) { setError("กรุณาเลือกสินค้า"); return; }
     if (isSerialized && scannedCodes.length === 0) { setError("กรุณาสแกน QR สินค้าที่จะเอาออกอย่างน้อย 1 ดวง"); return; }
+    if (!isSerialized && bookWarranty && warrantyCodes.length === 0) { setError("กรุณาสแกน QR สติ๊กเกอร์อย่างน้อย 1 ดวง"); return; }
 
     const fd = new FormData(e.currentTarget);
-    const soldQuantity = isSerialized ? scannedCodes.length : Number(quantityInput);
-
-    if (!isSerialized && bookWarranty && warrantyCodes.length !== soldQuantity) {
-      setError(`สแกน QR ประกันแล้ว ${warrantyCodes.length} ดวง แต่ขาย ${soldQuantity} ชิ้น กรุณาสแกนให้ครบเท่ากัน`);
-      return;
-    }
+    const soldQuantity = isSerialized
+      ? scannedCodes.length
+      : (bookWarranty ? warrantyCodes.length : Number(quantityInput));
 
     setError("");
     setLoading(true);
@@ -303,65 +303,81 @@ export function StockOutForm({
       )}
 
       {isSerialized ? (
-        <QrCodeListInput
-          label="สแกน QR สินค้าที่จะขายออก"
-          codes={scannedCodes}
-          onChange={setScannedCodes}
-          validate={validateInStockCode}
-        />
+        <>
+          <QrCodeListInput
+            label="สแกน QR สินค้าที่จะขายออก"
+            codes={scannedCodes}
+            onChange={setScannedCodes}
+            validate={validateInStockCode}
+          />
+          <button
+            type="button"
+            onClick={() => { setForceQuantityMode(true); setScannedCodes([]); setError(""); }}
+            className="text-xs text-brand underline"
+          >
+            สินค้านี้ไม่มี QR ติดสต็อกไว้? กดที่นี่เพื่อขายแบบนับจำนวนแทน
+          </button>
+        </>
       ) : (
         <>
-          <Input
-            label="จำนวนขาย *"
-            name="quantity"
-            type="number"
-            inputMode="numeric"
-            required
-            min="1"
-            max={selectedProduct?.current_stock}
-            placeholder="0"
-            value={quantityInput}
-            onChange={(e) => setQuantityInput(e.target.value)}
-          />
+          {forceQuantityMode && (selectedProduct?.default_warranty_months ?? 0) > 0 && (
+            <button
+              type="button"
+              onClick={() => setForceQuantityMode(false)}
+              className="text-xs text-brand underline"
+            >
+              ← กลับไปสแกน QR ที่อยู่ในสต็อกแทน
+            </button>
+          )}
+          <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+            <input
+              type="checkbox"
+              checked={bookWarranty}
+              onChange={(e) => {
+                setBookWarranty(e.target.checked);
+                if (!e.target.checked) setWarrantyCodes([]);
+              }}
+              className="w-4 h-4 rounded border-gray-300 text-brand focus:ring-brand"
+            />
+            สร้าง QR ประกันให้ด้วย (แปะสติ๊กเกอร์ทีละดวง)
+          </label>
 
-          <div className="rounded-xl border border-gray-200 p-3 space-y-3">
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <input
-                type="checkbox"
-                checked={bookWarranty}
-                onChange={(e) => {
-                  setBookWarranty(e.target.checked);
-                  if (!e.target.checked) setWarrantyCodes([]);
-                }}
-                className="w-4 h-4 rounded border-gray-300 text-brand focus:ring-brand"
-              />
-              สร้าง QR ประกันให้ด้วย
-            </label>
-
-            {bookWarranty && (
-              <>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium text-gray-700">ระยะประกัน (ปี)</label>
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    step="0.5"
-                    value={warrantyYears}
-                    onChange={(e) => setWarrantyYears(Number(e.target.value))}
-                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand"
-                    placeholder="0 = ไม่มีประกัน"
-                  />
-                </div>
-                <QrCodeListInput
-                  label={`สแกน QR สติ๊กเกอร์ที่จะแปะ (ต้องเท่ากับจำนวนที่ขาย${quantityInput ? ` — ${warrantyCodes.length}/${quantityInput}` : ""})`}
-                  codes={warrantyCodes}
-                  onChange={setWarrantyCodes}
-                  validate={validateUnusedCode}
+          {bookWarranty ? (
+            <>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-gray-700">ระยะประกัน (ปี)</label>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  step="0.5"
+                  value={warrantyYears}
+                  onChange={(e) => setWarrantyYears(Number(e.target.value))}
+                  className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand"
+                  placeholder="0 = ไม่มีประกัน"
                 />
-              </>
-            )}
-          </div>
+              </div>
+              <QrCodeListInput
+                label="สแกน QR สติ๊กเกอร์ที่จะแปะ (1 ดวง = 1 ชิ้นที่ขาย)"
+                codes={warrantyCodes}
+                onChange={setWarrantyCodes}
+                validate={validateUnusedCode}
+              />
+            </>
+          ) : (
+            <Input
+              label="จำนวนขาย *"
+              name="quantity"
+              type="number"
+              inputMode="numeric"
+              required
+              min="1"
+              max={selectedProduct?.current_stock}
+              placeholder="0"
+              value={quantityInput}
+              onChange={(e) => setQuantityInput(e.target.value)}
+            />
+          )}
         </>
       )}
 

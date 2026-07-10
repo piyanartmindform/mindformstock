@@ -41,8 +41,7 @@ export function QrCodeListInput({ label, codes, onChange, validate }: QrCodeList
     onChange(codes.filter((c) => c !== code));
   }
 
-  function handleManualSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function handleManualSubmit() {
     addCode(manualCode);
     inputRef.current?.focus();
   }
@@ -56,11 +55,17 @@ export function QrCodeListInput({ label, codes, onChange, validate }: QrCodeList
     <div className="flex flex-col gap-2">
       <label className="text-sm font-medium text-gray-700">{label} *</label>
 
-      <form onSubmit={handleManualSubmit} className="flex gap-2">
+      <div className="flex gap-2">
         <input
           ref={inputRef}
           value={manualCode}
           onChange={(e) => setManualCode(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleManualSubmit();
+            }
+          }}
           placeholder="พิมพ์หรือยิงบาร์โค้ด แล้วกด Enter"
           className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand"
         />
@@ -74,7 +79,7 @@ export function QrCodeListInput({ label, codes, onChange, validate }: QrCodeList
           </svg>
           สแกน
         </button>
-      </form>
+      </div>
 
       {checking && <p className="text-xs text-gray-400">กำลังตรวจสอบ...</p>}
       {error && <p className="text-xs text-red-500">{error}</p>}
