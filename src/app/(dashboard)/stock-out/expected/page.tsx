@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/Badge";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
 import { getCurrentUserRole } from "@/lib/auth";
+import { DeleteExpectedButton } from "./DeleteExpectedButton";
 
 async function getExpected() {
   const supabase = createClient();
@@ -53,10 +54,11 @@ export default async function ExpectedStockOutPage() {
                 return (
                   <div key={item.id}>
                     {role === "admin" && (
-                      <div className="flex justify-end mb-1">
+                      <div className="flex justify-end items-center gap-1 mb-1">
                         <Link href={`/stock-out/expected/${item.id}/edit`} className="text-xs text-brand underline px-1">
                           แก้ไข
                         </Link>
+                        {item.sold_quantity === 0 && <DeleteExpectedButton id={item.id} />}
                       </div>
                     )}
                     <Link href={`/stock-out/new?expected=${item.id}`}>
