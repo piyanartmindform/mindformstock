@@ -88,7 +88,7 @@ export function StockInForm({
         quantity,
         received_date: fd.get("received_date") as string,
         notes: fd.get("notes") || null,
-        created_by: user?.email ?? user?.id ?? null,
+        created_by: user?.id ?? null,
         stock_in_expected_id: expected?.id ?? null,
       })
       .select()

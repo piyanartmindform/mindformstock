@@ -11,7 +11,18 @@ async function getStockIn(id: string) {
     .select("*, products_mf(id, name, model, unit)")
     .eq("id", id)
     .single();
-  return data;
+  if (!data) return null;
+
+  let creatorName: string | null = null;
+  if (data.created_by) {
+    const { data: profile } = await supabase
+      .from("profiles_mf")
+      .select("full_name")
+      .eq("id", data.created_by)
+      .maybeSingle();
+    creatorName = profile?.full_name ?? null;
+  }
+  return { ...data, creatorName };
 }
 
 export default async function StockInDetailPage({ params }: { params: { id: string } }) {
@@ -25,7 +36,7 @@ export default async function StockInDetailPage({ params }: { params: { id: stri
     { label: "ซัพพลายเออร์", value: item.supplier || "-" },
     { label: "ประเทศต้นทาง", value: item.source_country || "-" },
     { label: "หมายเหตุ", value: item.notes || "-" },
-    { label: "บันทึกโดย", value: item.created_by || "-" },
+    { label: "บันทึกโดย", value: item.creatorName || "-" },
   ];
 
   return (

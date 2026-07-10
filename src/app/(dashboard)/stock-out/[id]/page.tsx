@@ -11,7 +11,18 @@ async function getStockOut(id: string) {
     .select("*, products_mf(id, name, model, brand, unit)")
     .eq("id", id)
     .single();
-  return data;
+  if (!data) return null;
+
+  let creatorName: string | null = null;
+  if (data.created_by) {
+    const { data: profile } = await supabase
+      .from("profiles_mf")
+      .select("full_name")
+      .eq("id", data.created_by)
+      .maybeSingle();
+    creatorName = profile?.full_name ?? null;
+  }
+  return { ...data, creatorName };
 }
 
 export default async function StockOutDetailPage({ params }: { params: { id: string } }) {
@@ -26,7 +37,7 @@ export default async function StockOutDetailPage({ params }: { params: { id: str
     { label: "โปรเจค", value: item.project_name || "-" },
     { label: "ราคา", value: item.price ? `฿${item.price.toLocaleString()}` : "-" },
     { label: "หมายเหตุ", value: item.notes || "-" },
-    { label: "บันทึกโดย", value: item.created_by || "-" },
+    { label: "บันทึกโดย", value: item.creatorName || "-" },
   ];
 
   return (

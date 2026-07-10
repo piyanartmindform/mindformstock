@@ -105,7 +105,7 @@ export function StockOutForm({
         project_name: projectName,
         price: fd.get("price") ? Number(fd.get("price")) : null,
         notes: fd.get("notes") || null,
-        created_by: user?.email ?? user?.id ?? null,
+        created_by: user?.id ?? null,
         stock_out_expected_id: expected?.id ?? null,
       })
       .select()
