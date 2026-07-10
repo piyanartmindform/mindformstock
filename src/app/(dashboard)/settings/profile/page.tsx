@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/auth";
 import { ProfileCard } from "./ProfileCard";
 import { ChangePasswordForm } from "./ChangePasswordForm";
 
 async function getProfile() {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) return null;
+  const supabase = createClient();
   const { data } = await supabase.from("profiles_mf").select("role, full_name").eq("id", user.id).single();
   return { email: user.email ?? "", full_name: data?.full_name ?? null, role: data?.role ?? "staff" };
 }

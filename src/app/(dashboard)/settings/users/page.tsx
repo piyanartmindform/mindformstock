@@ -1,20 +1,14 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getAuthUser, getCurrentUserRole } from "@/lib/auth";
 import { UserManager } from "./UserManager";
 
 export default async function UsersPage() {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getAuthUser();
   if (!user) redirect("/login");
 
-  const { data: myProfile } = await supabase
-    .from("profiles_mf")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (myProfile?.role !== "admin") {
+  const role = await getCurrentUserRole();
+  if (role !== "admin") {
     redirect("/settings");
   }
 
