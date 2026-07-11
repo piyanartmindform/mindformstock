@@ -91,6 +91,11 @@ export function RegisterForm({ products }: { products: Product[] }) {
       setLoading(false);
       return;
     }
+    if (existing?.status === "sold") {
+      setError(`รหัส ${trimmedCode} เป็นบาร์โค้ดกล่องที่ใช้ตัดสต็อกไปแล้ว กรุณาใช้ QR สติ๊กเกอร์ใหม่สำหรับติดตั้งหน้างานแทน`);
+      setLoading(false);
+      return;
+    }
 
     let updateErr: any;
     if (existing) {

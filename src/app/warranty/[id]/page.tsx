@@ -17,8 +17,8 @@ export default async function PublicWarrantyPage({ params }: { params: { id: str
   const item = await getQRCode(params.id);
   if (!item) notFound();
 
-  // QR exists but not yet registered
-  if (item.status === "unused") {
+  // QR exists but not yet registered (unused, or scanned out as a stock-tracking code only)
+  if (item.status === "unused" || item.status === "sold") {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <div className="bg-brand px-6 pt-10 pb-6">

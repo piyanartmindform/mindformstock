@@ -45,26 +45,19 @@ export function StockOutForm({
   const [selectedProductId, setSelectedProductId] = useState(defaultProductId ?? "");
   const [scannedCodes, setScannedCodes] = useState<string[]>([]);
   const [quantityInput, setQuantityInput] = useState("");
-  const [bookWarranty, setBookWarranty] = useState(false);
-  const [warrantyCodes, setWarrantyCodes] = useState<string[]>([]);
   const [forceQuantityMode, setForceQuantityMode] = useState(false);
   const [savedCount, setSavedCount] = useState<number | null>(null);
 
   const selectedProduct = products.find((p) => p.id === selectedProductId);
   const isSerialized = !forceQuantityMode && (selectedProduct?.default_warranty_months ?? 0) > 0;
-  const [warrantyYears, setWarrantyYears] = useState(() => (selectedProduct?.default_warranty_months ?? 0) / 12);
   const remaining = expected ? Math.max(0, expected.expected_quantity - expected.sold_quantity) : null;
 
   function handleProductChange(id: string) {
     setSelectedProductId(id);
     setScannedCodes([]);
-    setBookWarranty(false);
-    setWarrantyCodes([]);
     setForceQuantityMode(false);
     setError("");
     setSavedCount(null);
-    const p = products.find((x) => x.id === id);
-    setWarrantyYears(p ? p.default_warranty_months / 12 : 0);
   }
 
   async function validateInStockCode(code: string): Promise<string | undefined> {
@@ -81,35 +74,18 @@ export function StockOutForm({
     return undefined;
   }
 
-  async function validateUnusedCode(code: string): Promise<string | undefined> {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("qr_codes_mf")
-      .select("status")
-      .eq("code", code)
-      .maybeSingle();
-    if (error) return error.message;
-    if (!data) return `ไม่พบรหัส ${code} ในระบบ`;
-    if (data.status !== "unused") return `รหัส ${code} ถูกใช้ไปแล้ว (สถานะ: ${data.status})`;
-    return undefined;
-  }
-
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!selectedProductId) { setError("กรุณาเลือกสินค้า"); return; }
     if (isSerialized && scannedCodes.length === 0) { setError("กรุณาสแกน QR สินค้าที่จะเอาออกอย่างน้อย 1 ดวง"); return; }
-    if (!isSerialized && bookWarranty && warrantyCodes.length === 0) { setError("กรุณาสแกน QR สติ๊กเกอร์อย่างน้อย 1 ดวง"); return; }
 
     const fd = new FormData(e.currentTarget);
-    const soldQuantity = isSerialized
-      ? scannedCodes.length
-      : (bookWarranty ? warrantyCodes.length : Number(quantityInput));
+    const quantity = isSerialized ? scannedCodes.length : Number(quantityInput);
 
     setError("");
     setSavedCount(null);
     setLoading(true);
 
-    const quantity = soldQuantity;
     const soldDate = fd.get("sold_date") as string;
     const customerName = expected ? expected.customer_name : (fd.get("customer_name") as string);
     const projectName = expected ? expected.project_name : ((fd.get("project_name") as string) || null);
@@ -143,26 +119,11 @@ export function StockOutForm({
     if (outError) { setError(outError.message); setLoading(false); return; }
 
     if (isSerialized) {
-      const warrantyMonths = Math.round(warrantyYears * 12);
-      let warrantyExpiresAt: string | null = null;
-      if (warrantyMonths > 0) {
-        const d = new Date(soldDate);
-        d.setMonth(d.getMonth() + warrantyMonths);
-        warrantyExpiresAt = d.toISOString();
-      }
-
+      // กล่องที่สแกนออกตอนนี้ตัดสต็อกเท่านั้น ไม่ผูกประกัน — ประกันจะลงทะเบียนแยกด้วย QR ใหม่
+      // ตอนติดตั้งหน้างานผ่าน /warranty/register แทน
       const { data: updated, error: qrError } = await supabase
         .from("qr_codes_mf")
-        .update({
-          status: "registered",
-          customer_name: customerName,
-          project_name: projectName,
-          purchase_date: soldDate,
-          warranty_months: warrantyMonths,
-          warranty_expires_at: warrantyExpiresAt,
-          stock_out_id: stockOut.id,
-          registered_at: new Date().toISOString(),
-        })
+        .update({ status: "sold", stock_out_id: stockOut.id })
         .in("code", scannedCodes)
         .eq("status", "in_stock")
         .eq("product_id", selectedProductId)
@@ -171,38 +132,6 @@ export function StockOutForm({
       if (qrError) { setError(qrError.message); setLoading(false); return; }
       if (!updated || updated.length !== scannedCodes.length) {
         setError("มีบางรหัสถูกใช้ไปแล้วระหว่างที่กรอกฟอร์ม กรุณาตรวจสอบรายการแล้วลองใหม่");
-        setLoading(false);
-        return;
-      }
-    } else if (bookWarranty && warrantyCodes.length > 0) {
-      const warrantyMonths = Math.round(warrantyYears * 12);
-      let warrantyExpiresAt: string | null = null;
-      if (warrantyMonths > 0) {
-        const d = new Date(soldDate);
-        d.setMonth(d.getMonth() + warrantyMonths);
-        warrantyExpiresAt = d.toISOString();
-      }
-
-      const { data: updated, error: qrError } = await supabase
-        .from("qr_codes_mf")
-        .update({
-          status: "registered",
-          product_id: selectedProductId,
-          customer_name: customerName,
-          project_name: projectName,
-          purchase_date: soldDate,
-          warranty_months: warrantyMonths,
-          warranty_expires_at: warrantyExpiresAt,
-          stock_out_id: stockOut.id,
-          registered_at: new Date().toISOString(),
-        })
-        .in("code", warrantyCodes)
-        .eq("status", "unused")
-        .select("code");
-
-      if (qrError) { setError(qrError.message); setLoading(false); return; }
-      if (!updated || updated.length !== warrantyCodes.length) {
-        setError("มีบางรหัส QR ประกันถูกใช้ไปแล้วระหว่างที่กรอกฟอร์ม สต็อกยังไม่ถูกตัด กรุณาตรวจสอบรายการแล้วลองใหม่");
         setLoading(false);
         return;
       }
@@ -215,11 +144,10 @@ export function StockOutForm({
       await supabase.rpc("increment_expected_sold", { p_id: expected.id, amount: quantity });
     }
 
-    if (isSerialized || (bookWarranty && warrantyCodes.length > 0)) {
+    if (isSerialized) {
       // ทำงานต่อเนื่อง: อยู่หน้าเดิม คงสินค้า/ลูกค้าไว้ เคลียร์แค่รายการที่สแกน
       // เพื่อสแกนชิ้นถัดไปของสินค้าเดียวกันได้ทันที ถ้าจะเปลี่ยนสินค้าค่อยเลือกใหม่เอง
       setScannedCodes([]);
-      setWarrantyCodes([]);
       setSavedCount(quantity);
       setLoading(false);
       router.refresh();
@@ -325,7 +253,7 @@ export function StockOutForm({
       {isSerialized ? (
         <>
           <QrCodeListInput
-            label="สแกน QR สินค้าที่จะขายออก"
+            label="สแกนบาร์โค้ดกล่องที่จะขายออก"
             codes={scannedCodes}
             onChange={setScannedCodes}
             validate={validateInStockCode}
@@ -335,7 +263,7 @@ export function StockOutForm({
             onClick={() => { setForceQuantityMode(true); setScannedCodes([]); setError(""); }}
             className="text-xs text-brand underline"
           >
-            สินค้านี้ไม่มี QR ติดสต็อกไว้? กดที่นี่เพื่อขายแบบนับจำนวนแทน
+            สินค้านี้ไม่มีบาร์โค้ดติดสต็อกไว้? กดที่นี่เพื่อขายแบบนับจำนวนแทน
           </button>
         </>
       ) : (
@@ -346,58 +274,21 @@ export function StockOutForm({
               onClick={() => setForceQuantityMode(false)}
               className="text-xs text-brand underline"
             >
-              ← กลับไปสแกน QR ที่อยู่ในสต็อกแทน
+              ← กลับไปสแกนบาร์โค้ดที่อยู่ในสต็อกแทน
             </button>
           )}
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-            <input
-              type="checkbox"
-              checked={bookWarranty}
-              onChange={(e) => {
-                setBookWarranty(e.target.checked);
-                if (!e.target.checked) setWarrantyCodes([]);
-              }}
-              className="w-4 h-4 rounded border-gray-300 text-brand focus:ring-brand"
-            />
-            สร้าง QR ประกันให้ด้วย (แปะสติ๊กเกอร์ทีละดวง)
-          </label>
-
-          {bookWarranty ? (
-            <>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-gray-700">ระยะประกัน (ปี)</label>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  min="0"
-                  step="0.5"
-                  value={warrantyYears}
-                  onChange={(e) => setWarrantyYears(Number(e.target.value))}
-                  className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand"
-                  placeholder="0 = ไม่มีประกัน"
-                />
-              </div>
-              <QrCodeListInput
-                label="สแกน QR สติ๊กเกอร์ที่จะแปะ (1 ดวง = 1 ชิ้นที่ขาย)"
-                codes={warrantyCodes}
-                onChange={setWarrantyCodes}
-                validate={validateUnusedCode}
-              />
-            </>
-          ) : (
-            <Input
-              label="จำนวนขาย *"
-              name="quantity"
-              type="number"
-              inputMode="numeric"
-              required
-              min="1"
-              max={selectedProduct?.current_stock}
-              placeholder="0"
-              value={quantityInput}
-              onChange={(e) => setQuantityInput(e.target.value)}
-            />
-          )}
+          <Input
+            label="จำนวนขาย *"
+            name="quantity"
+            type="number"
+            inputMode="numeric"
+            required
+            min="1"
+            max={selectedProduct?.current_stock}
+            placeholder="0"
+            value={quantityInput}
+            onChange={(e) => setQuantityInput(e.target.value)}
+          />
         </>
       )}
 
@@ -414,22 +305,6 @@ export function StockOutForm({
           <CustomerCombobox label="ชื่อลูกค้า" name="customer_name" required />
           <Input label="ชื่อโปรเจค" name="project_name" placeholder="ชื่อโครงการ (ถ้ามี)" />
         </>
-      )}
-
-      {isSerialized && (
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-gray-700">ระยะประกัน (ปี)</label>
-          <input
-            type="number"
-            inputMode="decimal"
-            min="0"
-            step="0.5"
-            value={warrantyYears}
-            onChange={(e) => setWarrantyYears(Number(e.target.value))}
-            className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand"
-            placeholder="0 = ไม่มีประกัน"
-          />
-        </div>
       )}
 
       <Input label="ราคา (บาท)" name="price" type="number" inputMode="numeric" placeholder="ไม่บังคับ" />
