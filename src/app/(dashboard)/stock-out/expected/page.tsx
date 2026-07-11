@@ -16,6 +16,29 @@ async function getExpected() {
   return data ?? [];
 }
 
+function registeredKey(productId: string, customerName: string, projectName: string | null) {
+  return `${productId}|${customerName}|${projectName ?? ""}`;
+}
+
+async function getRegisteredCounts(items: any[]) {
+  const productIds = Array.from(new Set(items.map((i) => i.product_id).filter(Boolean)));
+  if (productIds.length === 0) return new Map<string, number>();
+
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("qr_codes_mf")
+    .select("product_id, customer_name, project_name")
+    .eq("status", "registered")
+    .in("product_id", productIds);
+
+  const counts = new Map<string, number>();
+  for (const row of data ?? []) {
+    const key = registeredKey(row.product_id, row.customer_name, row.project_name);
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return counts;
+}
+
 function groupByCustomer(items: any[]) {
   const groups = new Map<string, { customer: string; project: string | null; items: any[] }>();
   for (const item of items) {
@@ -36,8 +59,32 @@ function registerHref(item: any) {
   return `/warranty/register?${params.toString()}`;
 }
 
+function RegisterStatus({ item, registeredCounts }: { item: any; registeredCounts: Map<string, number> }) {
+  const target = item.sold_quantity;
+  if (target === 0) return null;
+  const registered = registeredCounts.get(registeredKey(item.product_id, item.customer_name, item.project_name)) ?? 0;
+
+  if (registered >= target) {
+    return (
+      <p className="text-xs text-green-600 mt-1 text-right">
+        ✓ ลงทะเบียนประกันแล้ว {registered}/{target}
+      </p>
+    );
+  }
+
+  return (
+    <div className="flex items-center justify-end gap-2 mt-1">
+      {registered > 0 && <span className="text-xs text-amber-600">ลงทะเบียนแล้ว {registered}/{target}</span>}
+      <Link href={registerHref(item)} className="text-xs text-brand underline px-1">
+        ลงทะเบียนประกัน →
+      </Link>
+    </div>
+  );
+}
+
 export default async function ExpectedStockOutPage() {
   const [items, role] = await Promise.all([getExpected(), getCurrentUserRole()]);
+  const registeredCounts = await getRegisteredCounts(items);
   const open = items.filter((i: any) => i.status === "open");
   const closed = items.filter((i: any) => i.status === "closed");
   const openGroups = groupByCustomer(open);
@@ -115,11 +162,7 @@ export default async function ExpectedStockOutPage() {
                           </div>
                         </Card>
                       </Link>
-                      <div className="flex justify-end mt-1">
-                        <Link href={registerHref(item)} className="text-xs text-brand underline px-1">
-                          ลงทะเบียนประกัน →
-                        </Link>
-                      </div>
+                      <RegisterStatus item={item} registeredCounts={registeredCounts} />
                     </div>
                   );
                 })}
@@ -156,11 +199,7 @@ export default async function ExpectedStockOutPage() {
                               </Badge>
                             </div>
                           </Card>
-                          <div className="flex justify-end mt-1">
-                            <Link href={registerHref(item)} className="text-xs text-brand underline px-1">
-                              ลงทะเบียนประกัน →
-                            </Link>
-                          </div>
+                          <RegisterStatus item={item} registeredCounts={registeredCounts} />
                         </div>
                       ))}
                     </div>
