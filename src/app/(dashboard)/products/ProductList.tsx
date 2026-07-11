@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import Link from "next/link";
+import Image from "next/image";
 
 interface Category {
   id: string;
@@ -87,8 +88,7 @@ export function ProductList({ products, categories }: { products: any[]; categor
               <Link key={p.id} href={`/products/${p.id}`}>
                 <Card className="flex items-center gap-3 active:scale-95 transition-transform">
                   {p.image_urls?.[0] ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.image_urls[0]} alt={p.name} className="h-14 max-w-20 rounded-xl object-contain shrink-0" />
+                    <Image src={p.image_urls[0]} alt={p.name} width={80} height={56} className="h-14 w-auto max-w-20 rounded-xl object-contain shrink-0" />
                   ) : (
                     <div className="w-14 h-14 rounded-xl bg-gray-100 flex items-center justify-center shrink-0 text-2xl">📦</div>
                   )}

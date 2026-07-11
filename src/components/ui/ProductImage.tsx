@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 export function ProductImage({ images, alt }: { images: string[]; alt: string }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -11,13 +12,14 @@ export function ProductImage({ images, alt }: { images: string[]; alt: string })
     <>
       <div className="flex gap-2 mb-4 overflow-x-auto">
         {images.map((src, i) => (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             key={i}
             src={src}
             alt={`${alt} ${i + 1}`}
+            width={280}
+            height={160}
             onClick={() => setOpenIndex(i)}
-            className="h-40 max-w-[70vw] rounded-2xl object-contain cursor-zoom-in shrink-0 bg-gray-50"
+            className="h-40 w-auto max-w-[70vw] rounded-2xl object-contain cursor-zoom-in shrink-0 bg-gray-50"
           />
         ))}
       </div>

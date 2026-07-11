@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 
 interface ImageUploadProps {
@@ -51,8 +52,7 @@ export function ImageUpload({ value, onChange, max = 3 }: ImageUploadProps) {
           if (url) {
             return (
               <div key={i} className="relative w-24 h-24 rounded-2xl border border-gray-200 bg-gray-50 overflow-hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={url} alt={`รูปสินค้า ${i + 1}`} className="w-full h-full object-contain" />
+                <Image src={url} alt={`รูปสินค้า ${i + 1}`} fill className="object-contain" />
                 <button
                   type="button"
                   onClick={() => removeAt(i)}

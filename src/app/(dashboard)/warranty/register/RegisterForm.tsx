@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
+import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
-import { QrScanner } from "@/components/ui/QrScanner";
 import { CustomerCombobox } from "@/components/ui/CustomerCombobox";
+
+const QrScanner = dynamic(() => import("@/components/ui/QrScanner").then((mod) => mod.QrScanner), { ssr: false });
 
 interface Product {
   id: string;
@@ -219,8 +222,7 @@ export function RegisterForm({
         {selectedProduct && (
           <div className="flex items-center gap-3 rounded-xl bg-gray-50 px-3 py-2.5">
             {selectedProduct.image_urls?.[0] ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={selectedProduct.image_urls[0]} alt={selectedProduct.name} className="h-14 max-w-20 rounded-lg object-contain shrink-0 bg-white" />
+              <Image src={selectedProduct.image_urls[0]} alt={selectedProduct.name} width={80} height={56} className="h-14 w-auto max-w-20 rounded-lg object-contain shrink-0 bg-white" />
             ) : (
               <div className="w-14 h-14 rounded-lg bg-gray-200 flex items-center justify-center shrink-0 text-xl">📦</div>
             )}

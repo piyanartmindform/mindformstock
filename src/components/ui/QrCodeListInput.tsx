@@ -1,7 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { QrScanner } from "@/components/ui/QrScanner";
+import dynamic from "next/dynamic";
+
+const QrScanner = dynamic(() => import("@/components/ui/QrScanner").then((mod) => mod.QrScanner), { ssr: false });
 
 interface QrCodeListInputProps {
   label: string;

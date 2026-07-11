@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import Link from "next/link";
+import Image from "next/image";
 import { formatDate } from "@/lib/utils";
 import { getCurrentUserRole } from "@/lib/auth";
 import { DeleteExpectedButton } from "./DeleteExpectedButton";
@@ -138,8 +139,7 @@ export default async function ExpectedStockOutPage() {
                         <Card className="py-3 active:scale-95 transition-transform">
                           <div className="flex items-center gap-3">
                             {item.products_mf?.image_urls?.[0] ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={item.products_mf.image_urls[0]} alt={item.products_mf.name} className="h-14 max-w-20 rounded-lg object-contain shrink-0 bg-gray-50" />
+                              <Image src={item.products_mf.image_urls[0]} alt={item.products_mf.name} width={80} height={56} className="h-14 w-auto max-w-20 rounded-lg object-contain shrink-0 bg-gray-50" />
                             ) : (
                               <div className="w-14 h-14 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 text-xl">📦</div>
                             )}
