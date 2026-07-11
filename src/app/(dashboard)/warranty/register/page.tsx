@@ -12,7 +12,11 @@ async function getProducts() {
   return data ?? [];
 }
 
-export default async function RegisterWarrantyPage() {
+export default async function RegisterWarrantyPage({
+  searchParams,
+}: {
+  searchParams: { product?: string; customer?: string; project?: string };
+}) {
   const products = await getProducts();
   return (
     <div className="p-4 max-w-lg mx-auto w-full">
@@ -21,7 +25,12 @@ export default async function RegisterWarrantyPage() {
         <h1 className="text-xl font-bold text-gray-900">ลงทะเบียนประกัน</h1>
         <p className="text-sm text-gray-500 mt-1">ผูก QR สติ๊กเกอร์กับข้อมูลลูกค้า</p>
       </div>
-      <RegisterForm products={products} />
+      <RegisterForm
+        products={products}
+        defaultProductId={searchParams.product}
+        defaultCustomerName={searchParams.customer}
+        defaultProjectName={searchParams.project}
+      />
     </div>
   );
 }

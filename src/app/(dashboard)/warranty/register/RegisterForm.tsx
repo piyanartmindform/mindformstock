@@ -16,11 +16,24 @@ interface Product {
   image_urls?: string[];
 }
 
-export function RegisterForm({ products }: { products: Product[] }) {
+export function RegisterForm({
+  products,
+  defaultProductId,
+  defaultCustomerName,
+  defaultProjectName,
+}: {
+  products: Product[];
+  defaultProductId?: string;
+  defaultCustomerName?: string;
+  defaultProjectName?: string;
+}) {
   const [showScanner, setShowScanner] = useState(false);
   const [code, setCode] = useState("");
-  const [selectedProductId, setSelectedProductId] = useState("");
-  const [warrantyYears, setWarrantyYears] = useState(0);
+  const [selectedProductId, setSelectedProductId] = useState(defaultProductId ?? "");
+  const [warrantyYears, setWarrantyYears] = useState(() => {
+    const p = products.find((x) => x.id === defaultProductId);
+    return p ? p.default_warranty_months / 12 : 0;
+  });
   const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split("T")[0]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -218,8 +231,8 @@ export function RegisterForm({ products }: { products: Product[] }) {
         )}
 
         {/* Customer */}
-        <CustomerCombobox label="ชื่อลูกค้า" name="customer_name" required />
-        <Input label="ชื่อโปรเจค" name="project_name" placeholder="ชื่อโครงการ (ถ้ามี)" />
+        <CustomerCombobox label="ชื่อลูกค้า" name="customer_name" defaultValue={defaultCustomerName} required />
+        <Input label="ชื่อโปรเจค" name="project_name" defaultValue={defaultProjectName} placeholder="ชื่อโครงการ (ถ้ามี)" />
 
         {/* Dates */}
         <div className="flex flex-col gap-1.5">
