@@ -9,6 +9,7 @@ import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { CustomerCombobox } from "@/components/ui/CustomerCombobox";
 import { QrCodeListInput } from "@/components/ui/QrCodeListInput";
+import { groupProductsByCategory } from "@/lib/utils";
 
 interface Product {
   id: string;
@@ -18,6 +19,7 @@ interface Product {
   current_stock: number;
   default_warranty_months: number;
   image_urls?: string[];
+  categories_mf?: { name: string } | null;
 }
 
 interface Expected {
@@ -193,10 +195,14 @@ export function StockOutForm({
         required
       >
         <option value="">-- เลือกสินค้า --</option>
-        {products.map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.name}{p.model ? ` (${p.model})` : ""}
-          </option>
+        {groupProductsByCategory(products).map(({ category, items }) => (
+          <optgroup key={category} label={category}>
+            {items.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}{p.model ? ` (${p.model})` : ""}
+              </option>
+            ))}
+          </optgroup>
         ))}
       </Select>
 

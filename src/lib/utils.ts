@@ -28,3 +28,23 @@ export function addMonths(date: Date, months: number): Date {
 export function cn(...classes: (string | undefined | null | false)[]): string {
   return classes.filter(Boolean).join(" ");
 }
+
+const NO_CATEGORY_LABEL = "ไม่มีหมวดหมู่";
+
+export function groupProductsByCategory<T extends { categories_mf?: { name: string } | null }>(
+  products: T[]
+): { category: string; items: T[] }[] {
+  const groups = new Map<string, T[]>();
+  for (const p of products) {
+    const key = p.categories_mf?.name ?? NO_CATEGORY_LABEL;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(p);
+  }
+  return Array.from(groups.entries())
+    .sort(([a], [b]) => {
+      if (a === NO_CATEGORY_LABEL) return 1;
+      if (b === NO_CATEGORY_LABEL) return -1;
+      return a.localeCompare(b, "th");
+    })
+    .map(([category, items]) => ({ category, items }));
+}

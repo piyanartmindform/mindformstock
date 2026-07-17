@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { CustomerCombobox } from "@/components/ui/CustomerCombobox";
+import { groupProductsByCategory } from "@/lib/utils";
 
 const QrScanner = dynamic(() => import("@/components/ui/QrScanner").then((mod) => mod.QrScanner), { ssr: false });
 
@@ -17,6 +18,7 @@ interface Product {
   model: string | null;
   default_warranty_months: number;
   image_urls?: string[];
+  categories_mf?: { name: string } | null;
 }
 
 export function RegisterForm({
@@ -212,10 +214,14 @@ export function RegisterForm({
         {/* Product */}
         <Select label="สินค้า" value={selectedProductId} onChange={handleProductChange}>
           <option value="">-- เลือกสินค้า --</option>
-          {products.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}{p.model ? ` (${p.model})` : ""}
-            </option>
+          {groupProductsByCategory(products).map(({ category, items }) => (
+            <optgroup key={category} label={category}>
+              {items.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}{p.model ? ` (${p.model})` : ""}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </Select>
 

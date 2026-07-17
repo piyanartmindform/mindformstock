@@ -7,10 +7,10 @@ async function getProducts() {
   const supabase = createClient();
   const { data } = await supabase
     .from("products_mf")
-    .select("id, name, model, unit, image_urls")
+    .select("id, name, model, unit, image_urls, categories_mf(name)")
     .eq("is_active", true)
     .order("name");
-  return data ?? [];
+  return (data ?? []) as any;
 }
 
 export default async function NewExpectedPage() {
