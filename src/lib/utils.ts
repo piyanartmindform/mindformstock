@@ -29,17 +29,22 @@ export function cn(...classes: (string | undefined | null | false)[]): string {
   return classes.filter(Boolean).join(" ");
 }
 
+export function formatDateRange(from: string, to: string): string {
+  return from.slice(0, 10) === to.slice(0, 10) ? formatDate(from) : `${formatDate(from)} - ${formatDate(to)}`;
+}
+
 export function groupWarrantyByCustomerProduct<
   T extends {
     customer_name?: string | null;
+    registered_at?: string | null;
     products_mf?: { name: string; model?: string | null; unit?: string | null; image_urls?: string[] | null } | null;
   }
 >(
   items: T[]
-): { customer_name: string; product_name: string; product_model: string | null; unit: string | null; image_url: string | null; quantity: number }[] {
+): { customer_name: string; product_name: string; product_model: string | null; unit: string | null; image_url: string | null; quantity: number; earliest_date: string | null; latest_date: string | null }[] {
   const groups = new Map<
     string,
-    { customer_name: string; product_name: string; product_model: string | null; unit: string | null; image_url: string | null; quantity: number }
+    { customer_name: string; product_name: string; product_model: string | null; unit: string | null; image_url: string | null; quantity: number; earliest_date: string | null; latest_date: string | null }
   >();
   for (const item of items) {
     const customerName = item.customer_name || "ไม่ระบุลูกค้า";
@@ -53,9 +58,16 @@ export function groupWarrantyByCustomerProduct<
         unit: item.products_mf?.unit ?? null,
         image_url: item.products_mf?.image_urls?.[0] ?? null,
         quantity: 0,
+        earliest_date: null,
+        latest_date: null,
       });
     }
-    groups.get(key)!.quantity += 1;
+    const group = groups.get(key)!;
+    group.quantity += 1;
+    if (item.registered_at) {
+      if (!group.earliest_date || item.registered_at < group.earliest_date) group.earliest_date = item.registered_at;
+      if (!group.latest_date || item.registered_at > group.latest_date) group.latest_date = item.registered_at;
+    }
   }
   return Array.from(groups.values()).sort((a, b) => a.customer_name.localeCompare(b.customer_name, "th"));
 }
@@ -64,14 +76,15 @@ export function groupStockInByProduct<
   T extends {
     quantity: number;
     supplier?: string | null;
+    received_date?: string | null;
     products_mf?: { name: string; model?: string | null; unit?: string | null; image_urls?: string[] | null } | null;
   }
 >(
   items: T[]
-): { product_name: string; product_model: string | null; unit: string | null; image_url: string | null; quantity: number; supplier: string }[] {
+): { product_name: string; product_model: string | null; unit: string | null; image_url: string | null; quantity: number; supplier: string; earliest_date: string | null; latest_date: string | null }[] {
   const groups = new Map<
     string,
-    { product_name: string; product_model: string | null; unit: string | null; image_url: string | null; quantity: number; suppliers: Set<string> }
+    { product_name: string; product_model: string | null; unit: string | null; image_url: string | null; quantity: number; suppliers: Set<string>; earliest_date: string | null; latest_date: string | null }
   >();
   for (const item of items) {
     const productName = item.products_mf?.name || "ไม่ระบุสินค้า";
@@ -84,11 +97,17 @@ export function groupStockInByProduct<
         image_url: item.products_mf?.image_urls?.[0] ?? null,
         quantity: 0,
         suppliers: new Set(),
+        earliest_date: null,
+        latest_date: null,
       });
     }
     const group = groups.get(key)!;
     group.quantity += item.quantity;
     if (item.supplier) group.suppliers.add(item.supplier);
+    if (item.received_date) {
+      if (!group.earliest_date || item.received_date < group.earliest_date) group.earliest_date = item.received_date;
+      if (!group.latest_date || item.received_date > group.latest_date) group.latest_date = item.received_date;
+    }
   }
   return Array.from(groups.values())
     .map(({ suppliers, ...rest }) => ({ ...rest, supplier: suppliers.size > 0 ? Array.from(suppliers).join(", ") : "-" }))

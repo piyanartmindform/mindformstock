@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/Card";
 import Image from "next/image";
 import Link from "next/link";
-import { formatDate, groupWarrantyByCustomerProduct } from "@/lib/utils";
+import { formatDate, formatDateRange, groupWarrantyByCustomerProduct } from "@/lib/utils";
 import { ReportDateFilter } from "./ReportDateFilter";
 import { getReportData } from "@/lib/queries/reports";
 
@@ -137,6 +137,9 @@ export default async function ReportsPage({
                 </div>
                 <div className="text-right ml-2 shrink-0">
                   <p className="text-brand font-medium">{group.quantity} {group.unit ?? "ชิ้น"}</p>
+                  {group.earliest_date && group.latest_date && (
+                    <p className="text-xs text-gray-400">{formatDateRange(group.earliest_date, group.latest_date)}</p>
+                  )}
                 </div>
               </div>
             </Card>

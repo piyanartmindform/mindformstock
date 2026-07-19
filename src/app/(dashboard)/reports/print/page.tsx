@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { formatDate, groupStockInByProduct, groupWarrantyByCustomerProduct } from "@/lib/utils";
+import { formatDate, formatDateRange, groupStockInByProduct, groupWarrantyByCustomerProduct } from "@/lib/utils";
 import { getReportData } from "@/lib/queries/reports";
 import { PrintButton } from "@/components/ui/PrintButton";
 
@@ -75,6 +75,7 @@ export default async function ReportsPrintPage({
               <thead>
                 <tr className="text-left text-gray-500 border-b border-gray-200">
                   <th className="py-1.5 pr-2 font-medium w-11"></th>
+                  <th className="py-1.5 pr-2 font-medium">วันที่</th>
                   <th className="py-1.5 pr-2 font-medium">สินค้า</th>
                   <th className="py-1.5 pr-2 font-medium">ซัพพลายเออร์</th>
                   <th className="py-1.5 text-right font-medium">จำนวน</th>
@@ -88,6 +89,11 @@ export default async function ReportsPrintPage({
                   >
                     <td className="py-1.5 pr-2">
                       <ThumbCell src={group.image_url} alt={group.product_name} />
+                    </td>
+                    <td className="py-1.5 pr-2 text-gray-500 whitespace-nowrap">
+                      {group.earliest_date && group.latest_date
+                        ? formatDateRange(group.earliest_date, group.latest_date)
+                        : "-"}
                     </td>
                     <td className="py-1.5 pr-2 text-gray-900">
                       {group.product_name}
@@ -151,6 +157,7 @@ export default async function ReportsPrintPage({
               <thead>
                 <tr className="text-left text-gray-500 border-b border-gray-200">
                   <th className="py-1.5 pr-2 font-medium w-11"></th>
+                  <th className="py-1.5 pr-2 font-medium">วันที่</th>
                   <th className="py-1.5 pr-2 font-medium">ลูกค้า</th>
                   <th className="py-1.5 pr-2 font-medium">สินค้า</th>
                   <th className="py-1.5 text-right font-medium">จำนวน</th>
@@ -164,6 +171,11 @@ export default async function ReportsPrintPage({
                   >
                     <td className="py-1.5 pr-2">
                       <ThumbCell src={group.image_url} alt={group.product_name} />
+                    </td>
+                    <td className="py-1.5 pr-2 text-gray-500 whitespace-nowrap">
+                      {group.earliest_date && group.latest_date
+                        ? formatDateRange(group.earliest_date, group.latest_date)
+                        : "-"}
                     </td>
                     <td className="py-1.5 pr-2 text-gray-900">{group.customer_name}</td>
                     <td className="py-1.5 pr-2 text-gray-900">
