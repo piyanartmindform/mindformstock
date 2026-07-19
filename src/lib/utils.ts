@@ -30,7 +30,9 @@ export function cn(...classes: (string | undefined | null | false)[]): string {
 }
 
 export function formatDateRange(from: string, to: string): string {
-  return from.slice(0, 10) === to.slice(0, 10) ? formatDate(from) : `${formatDate(from)} - ${formatDate(to)}`;
+  return from.slice(0, 10) === to.slice(0, 10)
+    ? formatDateShort(from)
+    : `${formatDateShort(from)} - ${formatDateShort(to)}`;
 }
 
 export function groupWarrantyByCustomerProduct<

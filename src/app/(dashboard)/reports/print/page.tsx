@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { formatDate, formatDateRange, groupStockInByProduct, groupWarrantyByCustomerProduct } from "@/lib/utils";
+import { formatDateShort, formatDateRange, groupStockInByProduct, groupWarrantyByCustomerProduct } from "@/lib/utils";
 import { getReportData } from "@/lib/queries/reports";
 import { PrintButton } from "@/components/ui/PrintButton";
 
@@ -20,7 +20,7 @@ export default async function ReportsPrintPage({
 
   const totalIn = stockIn.reduce((s: number, i: any) => s + i.quantity, 0);
   const totalOut = stockOut.reduce((s: number, i: any) => s + i.quantity, 0);
-  const periodLabel = from === to ? formatDate(from) : `${formatDate(from)} - ${formatDate(to)}`;
+  const periodLabel = from === to ? formatDateShort(from) : `${formatDateShort(from)} - ${formatDateShort(to)}`;
 
   return (
     <div className="min-h-screen bg-gray-50 print:bg-white">
@@ -46,7 +46,7 @@ export default async function ReportsPrintPage({
           <p className="text-gray-700">
             ช่วงวันที่: <span className="font-semibold">{periodLabel}</span>
           </p>
-          <p className="text-gray-400">พิมพ์เมื่อ {formatDate(new Date().toISOString())}</p>
+          <p className="text-gray-400">พิมพ์เมื่อ {formatDateShort(new Date().toISOString())}</p>
         </div>
 
         <div className="grid grid-cols-3 gap-4 mb-8 text-center">
@@ -130,7 +130,7 @@ export default async function ReportsPrintPage({
                     <td className="py-1.5 pr-2">
                       <ThumbCell src={item.products_mf?.image_urls?.[0]} alt={item.products_mf?.name ?? ""} />
                     </td>
-                    <td className="py-1.5 pr-2 text-gray-500 whitespace-nowrap">{formatDate(item.sold_date)}</td>
+                    <td className="py-1.5 pr-2 text-gray-500 whitespace-nowrap">{formatDateShort(item.sold_date)}</td>
                     <td className="py-1.5 pr-2 text-gray-900">
                       {item.products_mf?.name}
                       {item.products_mf?.model && <span className="text-gray-400"> · {item.products_mf.model}</span>}

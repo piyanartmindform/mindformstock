@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/Card";
 import Image from "next/image";
 import Link from "next/link";
-import { formatDate, formatDateRange, groupWarrantyByCustomerProduct } from "@/lib/utils";
+import { formatDateShort, formatDateRange, groupWarrantyByCustomerProduct } from "@/lib/utils";
 import { ReportDateFilter } from "./ReportDateFilter";
 import { getReportData } from "@/lib/queries/reports";
 
@@ -81,7 +81,7 @@ export default async function ReportsPage({
                   </div>
                   <div className="text-right ml-2 shrink-0">
                     <p className="text-green-600 font-medium">+{item.quantity} {item.products_mf?.unit}</p>
-                    <p className="text-xs text-gray-400">{formatDate(item.received_date)}</p>
+                    <p className="text-xs text-gray-400">{formatDateShort(item.received_date)}</p>
                   </div>
                 </div>
               </Card>
@@ -109,7 +109,7 @@ export default async function ReportsPage({
                   </div>
                   <div className="text-right ml-2 shrink-0">
                     <p className="text-red-500 font-medium">-{item.quantity} {item.products_mf?.unit}</p>
-                    <p className="text-xs text-gray-400">{formatDate(item.sold_date)}</p>
+                    <p className="text-xs text-gray-400">{formatDateShort(item.sold_date)}</p>
                   </div>
                 </div>
               </Card>
