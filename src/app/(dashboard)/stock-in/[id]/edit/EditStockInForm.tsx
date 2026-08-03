@@ -5,11 +5,29 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { QrCodeListInput } from "@/components/ui/QrCodeListInput";
 
-export function EditStockInForm({ item }: { item: any }) {
+export function EditStockInForm({ item, linkedCodes }: { item: any; linkedCodes: string[] }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [newCodes, setNewCodes] = useState<string[]>([]);
+
+  const totalLinked = linkedCodes.length + newCodes.length;
+
+  async function validateUnusedCode(code: string): Promise<string | undefined> {
+    if (totalLinked >= item.quantity) return `ผูก QR ครบจำนวนที่รับเข้า (${item.quantity}) แล้ว`;
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("qr_codes_mf")
+      .select("status")
+      .eq("code", code)
+      .maybeSingle();
+    if (error) return error.message;
+    if (!data) return `ไม่พบรหัส ${code} ในระบบ`;
+    if (data.status !== "unused") return `รหัส ${code} ถูกใช้ไปแล้ว (สถานะ: ${data.status})`;
+    return undefined;
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -47,6 +65,24 @@ export function EditStockInForm({ item }: { item: any }) {
       await supabase.rpc("decrement_stock", { p_id: item.product_id, amount: -diff });
     }
 
+    // Link newly scanned QR codes to this stock-in — does not touch current_stock,
+    // the quantity was already counted at original receipt.
+    if (newCodes.length > 0) {
+      const { data: updated, error: qrError } = await supabase
+        .from("qr_codes_mf")
+        .update({ product_id: item.product_id, status: "in_stock", stock_in_id: item.id })
+        .in("code", newCodes)
+        .eq("status", "unused")
+        .select("code");
+
+      if (qrError) { setError(qrError.message); setLoading(false); return; }
+      if (!updated || updated.length !== newCodes.length) {
+        setError("มีบางรหัสถูกใช้ไปแล้วระหว่างที่กรอกฟอร์ม กรุณาตรวจสอบรายการแล้วลองใหม่");
+        setLoading(false);
+        return;
+      }
+    }
+
     router.push(`/stock-in/${item.id}`);
     router.refresh();
   }
@@ -62,6 +98,31 @@ export function EditStockInForm({ item }: { item: any }) {
         min="1"
         defaultValue={item.quantity}
       />
+
+      <div className="flex flex-col gap-2">
+        <p className="text-sm font-medium text-gray-700">
+          QR ที่ผูกกับรายการนี้ ({totalLinked}/{item.quantity})
+        </p>
+        {linkedCodes.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {linkedCodes.map((code) => (
+              <span
+                key={code}
+                className="inline-flex items-center px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-mono font-medium"
+              >
+                {code}
+              </span>
+            ))}
+          </div>
+        )}
+        <QrCodeListInput
+          label="สแกน QR เพิ่ม"
+          codes={newCodes}
+          onChange={setNewCodes}
+          validate={validateUnusedCode}
+        />
+      </div>
+
       <Input
         label="วันที่รับเข้า *"
         name="received_date"

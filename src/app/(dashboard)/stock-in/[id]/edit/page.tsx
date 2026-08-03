@@ -13,9 +13,20 @@ async function getData(id: string) {
   return data;
 }
 
+async function getLinkedCodes(id: string) {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("qr_codes_mf")
+    .select("code")
+    .eq("stock_in_id", id)
+    .order("code");
+  return data?.map((r) => r.code) ?? [];
+}
+
 export default async function EditStockInPage({ params }: { params: { id: string } }) {
   const item = await getData(params.id);
   if (!item) notFound();
+  const linkedCodes = await getLinkedCodes(params.id);
 
   return (
     <div className="p-4 max-w-lg mx-auto w-full">
@@ -27,7 +38,7 @@ export default async function EditStockInPage({ params }: { params: { id: string
           {item.products_mf?.model && ` · ${item.products_mf.model}`}
         </p>
       </div>
-      <EditStockInForm item={item} />
+      <EditStockInForm item={item} linkedCodes={linkedCodes} />
     </div>
   );
 }
