@@ -44,15 +44,17 @@ export function StockInForm({
   const [error, setError] = useState("");
   const [selectedProductId, setSelectedProductId] = useState(defaultProductId ?? "");
   const [scannedCodes, setScannedCodes] = useState<string[]>([]);
+  const [forceQuantityMode, setForceQuantityMode] = useState(false);
   const [savedCount, setSavedCount] = useState<number | null>(null);
 
   const selectedProduct = products.find((p) => p.id === selectedProductId);
-  const isSerialized = (selectedProduct?.default_warranty_months ?? 0) > 0;
+  const isSerialized = !forceQuantityMode;
   const remaining = expected ? Math.max(0, expected.expected_quantity - expected.received_quantity) : null;
 
   function handleProductChange(id: string) {
     setSelectedProductId(id);
     setScannedCodes([]);
+    setForceQuantityMode(false);
     setError("");
     setSavedCount(null);
   }
@@ -235,17 +237,33 @@ export function StockInForm({
             onChange={setScannedCodes}
             validate={validateUnusedCode}
           />
+          <button
+            type="button"
+            onClick={() => { setForceQuantityMode(true); setScannedCodes([]); setError(""); }}
+            className="text-xs text-brand underline"
+          >
+            สินค้านี้ไม่มีบาร์โค้ดติดกล่องไว้? กดที่นี่เพื่อรับเข้าแบบนับจำนวนแทน
+          </button>
         </>
       ) : (
-        <Input
-          label="จำนวนรับเข้า *"
-          name="quantity"
-          type="number"
-          inputMode="numeric"
-          required
-          min="1"
-          placeholder="0"
-        />
+        <>
+          <button
+            type="button"
+            onClick={() => setForceQuantityMode(false)}
+            className="text-xs text-brand underline"
+          >
+            ← กลับไปสแกนบาร์โค้ดแทน
+          </button>
+          <Input
+            label="จำนวนรับเข้า *"
+            name="quantity"
+            type="number"
+            inputMode="numeric"
+            required
+            min="1"
+            placeholder="0"
+          />
+        </>
       )}
 
       <Input

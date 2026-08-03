@@ -52,7 +52,7 @@ export function StockOutForm({
   const [savedCount, setSavedCount] = useState<number | null>(null);
 
   const selectedProduct = products.find((p) => p.id === selectedProductId);
-  const isSerialized = !forceQuantityMode && (selectedProduct?.default_warranty_months ?? 0) > 0;
+  const isSerialized = !forceQuantityMode;
   const remaining = expected ? Math.max(0, expected.expected_quantity - expected.sold_quantity) : null;
 
   function handleProductChange(id: string) {
@@ -274,15 +274,13 @@ export function StockOutForm({
         </>
       ) : (
         <>
-          {forceQuantityMode && (selectedProduct?.default_warranty_months ?? 0) > 0 && (
-            <button
-              type="button"
-              onClick={() => setForceQuantityMode(false)}
-              className="text-xs text-brand underline"
-            >
-              ← กลับไปสแกนบาร์โค้ดที่อยู่ในสต็อกแทน
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => setForceQuantityMode(false)}
+            className="text-xs text-brand underline"
+          >
+            ← กลับไปสแกนบาร์โค้ดที่อยู่ในสต็อกแทน
+          </button>
           <Input
             label="จำนวนขาย *"
             name="quantity"
