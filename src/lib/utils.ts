@@ -118,20 +118,20 @@ export function groupStockInByProduct<
 
 const NO_CATEGORY_LABEL = "ไม่มีหมวดหมู่";
 
-export function groupProductsByCategory<T extends { categories_mf?: { name: string } | null }>(
+export function groupProductsByCategory<T extends { categories_mf?: { name: string; sort_order?: number } | null }>(
   products: T[]
 ): { category: string; items: T[] }[] {
-  const groups = new Map<string, T[]>();
+  const groups = new Map<string, { sortOrder: number; items: T[] }>();
   for (const p of products) {
     const key = p.categories_mf?.name ?? NO_CATEGORY_LABEL;
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key)!.push(p);
+    if (!groups.has(key)) groups.set(key, { sortOrder: p.categories_mf?.sort_order ?? Infinity, items: [] });
+    groups.get(key)!.items.push(p);
   }
   return Array.from(groups.entries())
-    .sort(([a], [b]) => {
-      if (a === NO_CATEGORY_LABEL) return 1;
-      if (b === NO_CATEGORY_LABEL) return -1;
-      return a.localeCompare(b, "th");
+    .sort(([aKey, a], [bKey, b]) => {
+      if (aKey === NO_CATEGORY_LABEL) return 1;
+      if (bKey === NO_CATEGORY_LABEL) return -1;
+      return a.sortOrder - b.sortOrder;
     })
-    .map(([category, items]) => ({ category, items }));
+    .map(([category, { items }]) => ({ category, items }));
 }

@@ -5,7 +5,7 @@ import { NewProductForm } from "./NewProductForm";
 
 async function getCategories() {
   const supabase = createClient();
-  const { data } = await supabase.from("categories_mf").select("*").order("name");
+  const { data } = await supabase.from("categories_mf").select("*").order("sort_order");
   return data ?? [];
 }
 

@@ -4,6 +4,7 @@ export interface Category {
   id: string;
   name: string;
   description: string | null;
+  sort_order: number;
   created_at: string;
 }
 

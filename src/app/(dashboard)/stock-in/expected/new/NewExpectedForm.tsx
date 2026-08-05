@@ -15,7 +15,7 @@ interface Product {
   model: string | null;
   unit: string;
   image_urls?: string[];
-  categories_mf?: { name: string } | null;
+  categories_mf?: { name: string; sort_order: number } | null;
 }
 
 export function NewExpectedForm({ products }: { products: Product[] }) {

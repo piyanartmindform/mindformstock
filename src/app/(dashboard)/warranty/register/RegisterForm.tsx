@@ -18,7 +18,7 @@ interface Product {
   model: string | null;
   default_warranty_months: number;
   image_urls?: string[];
-  categories_mf?: { name: string } | null;
+  categories_mf?: { name: string; sort_order: number } | null;
 }
 
 export function RegisterForm({

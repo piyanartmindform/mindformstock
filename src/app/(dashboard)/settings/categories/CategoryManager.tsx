@@ -18,9 +18,10 @@ export function CategoryManager({ initialCategories }: { initialCategories: Cate
     if (!newName.trim()) return;
     setLoading(true);
     const supabase = createClient();
+    const nextSortOrder = categories.reduce((max, c) => Math.max(max, c.sort_order), 0) + 1;
     const { data, error } = await supabase
       .from("categories_mf")
-      .insert({ name: newName.trim() })
+      .insert({ name: newName.trim(), sort_order: nextSortOrder })
       .select()
       .single();
     if (!error && data) {
@@ -28,6 +29,26 @@ export function CategoryManager({ initialCategories }: { initialCategories: Cate
       setNewName("");
     }
     setLoading(false);
+  }
+
+  async function moveCategory(id: string, direction: "up" | "down") {
+    const idx = categories.findIndex((c) => c.id === id);
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (idx === -1 || swapIdx < 0 || swapIdx >= categories.length) return;
+    const a = categories[idx];
+    const b = categories[swapIdx];
+    const supabase = createClient();
+    const [res1, res2] = await Promise.all([
+      supabase.from("categories_mf").update({ sort_order: b.sort_order }).eq("id", a.id),
+      supabase.from("categories_mf").update({ sort_order: a.sort_order }).eq("id", b.id),
+    ]);
+    if (!res1.error && !res2.error) {
+      const next = [...categories];
+      next[idx] = { ...a, sort_order: b.sort_order };
+      next[swapIdx] = { ...b, sort_order: a.sort_order };
+      next.sort((x, y) => x.sort_order - y.sort_order);
+      setCategories(next);
+    }
   }
 
   async function saveEdit(id: string) {
@@ -68,8 +89,26 @@ export function CategoryManager({ initialCategories }: { initialCategories: Cate
       </div>
 
       <div className="space-y-2">
-        {categories.map((c) => (
+        {categories.map((c, i) => (
           <Card key={c.id} className="py-3 flex items-center justify-between gap-2">
+            <div className="flex flex-col shrink-0">
+              <button
+                onClick={() => moveCategory(c.id, "up")}
+                disabled={i === 0}
+                className="w-6 h-6 flex items-center justify-center text-gray-400 disabled:opacity-25"
+                aria-label="เลื่อนขึ้น"
+              >
+                ▲
+              </button>
+              <button
+                onClick={() => moveCategory(c.id, "down")}
+                disabled={i === categories.length - 1}
+                className="w-6 h-6 flex items-center justify-center text-gray-400 disabled:opacity-25"
+                aria-label="เลื่อนลง"
+              >
+                ▼
+              </button>
+            </div>
             {editId === c.id ? (
               <>
                 <Input

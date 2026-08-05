@@ -19,7 +19,7 @@ interface Product {
   current_stock: number;
   default_warranty_months: number;
   image_urls?: string[];
-  categories_mf?: { name: string } | null;
+  categories_mf?: { name: string; sort_order: number } | null;
 }
 
 interface Expected {

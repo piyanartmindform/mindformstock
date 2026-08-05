@@ -11,7 +11,7 @@ async function getData() {
       .select("*, categories_mf(name)")
       .eq("is_active", true)
       .order("name"),
-    supabase.from("categories_mf").select("id, name").order("name"),
+    supabase.from("categories_mf").select("id, name").order("sort_order"),
   ]);
   return {
     products: productsRes.data ?? [],

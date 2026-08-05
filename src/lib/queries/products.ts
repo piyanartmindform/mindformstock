@@ -5,7 +5,7 @@ export async function getProducts(): Promise<Product[]> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("products_mf")
-    .select("*, categories_mf(id, name)")
+    .select("*, categories_mf(id, name, sort_order)")
     .eq("is_active", true)
     .order("name");
   if (error) throw error;
@@ -16,7 +16,7 @@ export async function getProduct(id: string): Promise<Product | null> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("products_mf")
-    .select("*, categories_mf(id, name)")
+    .select("*, categories_mf(id, name, sort_order)")
     .eq("id", id)
     .single();
   if (error) return null;
@@ -42,7 +42,7 @@ export async function getCategories(): Promise<Category[]> {
   const { data, error } = await supabase
     .from("categories_mf")
     .select("*")
-    .order("name");
+    .order("sort_order");
   if (error) throw error;
   return data ?? [];
 }

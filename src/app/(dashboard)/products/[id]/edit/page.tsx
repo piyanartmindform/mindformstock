@@ -7,7 +7,7 @@ async function getData(id: string) {
   const supabase = createClient();
   const [productRes, categoriesRes] = await Promise.all([
     supabase.from("products_mf").select("*").eq("id", id).single(),
-    supabase.from("categories_mf").select("*").order("name"),
+    supabase.from("categories_mf").select("*").order("sort_order"),
   ]);
   if (productRes.error) return null;
   return { product: productRes.data, categories: categoriesRes.data ?? [] };
