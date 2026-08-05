@@ -14,7 +14,7 @@ interface Category {
 type SortOrder = "none" | "asc" | "desc";
 
 export function ProductList({ products, categories }: { products: any[]; categories: Category[] }) {
-  const [categoryId, setCategoryId] = useState<string>("all");
+  const [categoryId, setCategoryId] = useState<string>(categories[0]?.id ?? "all");
   const [sortOrder, setSortOrder] = useState<SortOrder>("none");
 
   const filtered =
