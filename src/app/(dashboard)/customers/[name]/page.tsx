@@ -22,7 +22,11 @@ export default async function CustomerDetailPage({ params }: { params: { name: s
       .select("id, sold_date, quantity, project_name, products_mf(name, model, unit)")
       .eq("customer_name", customerName)
       .order("sold_date", { ascending: false }),
-    supabase.from("customers_mf").select("id, name, notes").eq("name", customerName).maybeSingle(),
+    supabase
+      .from("customers_mf")
+      .select("id, name, notes, contact_person, phone, address, tax_id")
+      .eq("name", customerName)
+      .maybeSingle(),
   ]);
 
   const warranties = warrantyRes.data ?? [];

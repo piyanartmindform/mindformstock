@@ -10,13 +10,25 @@ interface Props {
   customerName: string;
   warrantyCount: number;
   stockOutCount: number;
-  customer: { id: string; name: string; notes: string | null } | null;
+  customer: {
+    id: string;
+    name: string;
+    notes: string | null;
+    contact_person: string | null;
+    phone: string | null;
+    address: string | null;
+    tax_id: string | null;
+  } | null;
 }
 
 export function CustomerDetailActions({ customerName, warrantyCount, stockOutCount, customer }: Props) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(customer?.name ?? customerName);
+  const [editContactPerson, setEditContactPerson] = useState(customer?.contact_person ?? "");
+  const [editPhone, setEditPhone] = useState(customer?.phone ?? "");
+  const [editAddress, setEditAddress] = useState(customer?.address ?? "");
+  const [editTaxId, setEditTaxId] = useState(customer?.tax_id ?? "");
   const [editNotes, setEditNotes] = useState(customer?.notes ?? "");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -32,7 +44,14 @@ export function CustomerDetailActions({ customerName, warrantyCount, stockOutCou
 
     const { error: updateError } = await supabase
       .from("customers_mf")
-      .update({ name: trimmedName, notes: editNotes.trim() || null })
+      .update({
+        name: trimmedName,
+        contact_person: editContactPerson.trim() || null,
+        phone: editPhone.trim() || null,
+        address: editAddress.trim() || null,
+        tax_id: editTaxId.trim() || null,
+        notes: editNotes.trim() || null,
+      })
       .eq("id", customer.id);
 
     if (updateError) {
@@ -101,6 +120,17 @@ export function CustomerDetailActions({ customerName, warrantyCount, stockOutCou
         )}
       </div>
 
+      {customer && !editing && (customer.contact_person || customer.phone || customer.address || customer.tax_id) && (
+        <Card className="py-3 mt-3 space-y-1">
+          {customer.contact_person && (
+            <p className="text-sm text-gray-700">ผู้ติดต่อ: {customer.contact_person}</p>
+          )}
+          {customer.phone && <p className="text-sm text-gray-700">โทร: {customer.phone}</p>}
+          {customer.address && <p className="text-sm text-gray-700 whitespace-pre-line">ที่อยู่: {customer.address}</p>}
+          {customer.tax_id && <p className="text-sm text-gray-700">เลขผู้เสียภาษี: {customer.tax_id}</p>}
+        </Card>
+      )}
+
       {customer && editing && (
         <Card className="py-4 mt-3 border-brand/30 bg-brand/5">
           <div className="space-y-2">
@@ -108,6 +138,33 @@ export function CustomerDetailActions({ customerName, warrantyCount, stockOutCou
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
               placeholder="ชื่อลูกค้า / บริษัท *"
+              className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand"
+            />
+            <input
+              value={editContactPerson}
+              onChange={(e) => setEditContactPerson(e.target.value)}
+              placeholder="ชื่อผู้ติดต่อ"
+              className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand"
+            />
+            <input
+              value={editPhone}
+              onChange={(e) => setEditPhone(e.target.value)}
+              placeholder="เบอร์ติดต่อ"
+              inputMode="tel"
+              className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand"
+            />
+            <textarea
+              value={editAddress}
+              onChange={(e) => setEditAddress(e.target.value)}
+              placeholder="ที่อยู่บริษัท"
+              rows={2}
+              className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand resize-none"
+            />
+            <input
+              value={editTaxId}
+              onChange={(e) => setEditTaxId(e.target.value)}
+              placeholder="เลขประจำตัวผู้เสียภาษี (Tax ID)"
+              inputMode="numeric"
               className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand"
             />
             <input
