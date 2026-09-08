@@ -2,14 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/Input";
-import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { CustomerCombobox } from "@/components/ui/CustomerCombobox";
 import { QrCodeListInput } from "@/components/ui/QrCodeListInput";
-import { groupProductsByCategory } from "@/lib/utils";
+import { ProductPicker } from "@/components/ui/ProductPicker";
 
 interface Product {
   id: string;
@@ -187,42 +185,19 @@ export function StockOutForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 pb-24">
-      <Select
-        label="สินค้า *"
+      <ProductPicker
+        label="สินค้า"
+        products={products}
         value={selectedProductId}
-        onChange={(e) => handleProductChange(e.target.value)}
+        onChange={handleProductChange}
         disabled={!!expected}
         required
-      >
-        <option value="">-- เลือกสินค้า --</option>
-        {groupProductsByCategory(products).map(({ category, items }) => (
-          <optgroup key={category} label={category}>
-            {items.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}{p.model ? ` (${p.model})` : ""}
-              </option>
-            ))}
-          </optgroup>
-        ))}
-      </Select>
-
-      {selectedProduct && (
-        <div className="flex items-center gap-3 rounded-xl bg-gray-50 px-3 py-2.5">
-          {selectedProduct.image_urls?.[0] ? (
-            <Image src={selectedProduct.image_urls[0]} alt={selectedProduct.name} width={80} height={56} className="h-14 w-auto max-w-20 rounded-lg object-contain shrink-0 bg-white" />
-          ) : (
-            <div className="w-14 h-14 rounded-lg bg-gray-200 flex items-center justify-center shrink-0 text-xl">📦</div>
-          )}
-          <div className="min-w-0">
-            <p className="font-medium text-gray-900 text-sm truncate">
-              {selectedProduct.name}{selectedProduct.model ? ` (${selectedProduct.model})` : ""}
-            </p>
-            <p className="text-sm text-gray-500">
-              สต็อกคงเหลือ: <strong className={selectedProduct.current_stock === 0 ? "text-red-500" : "text-gray-900"}>{selectedProduct.current_stock} {selectedProduct.unit}</strong>
-            </p>
-          </div>
-        </div>
-      )}
+        renderExtra={(p) => (
+          <>
+            สต็อกคงเหลือ: <strong className={p.current_stock === 0 ? "text-red-500" : "text-gray-900"}>{p.current_stock} {p.unit}</strong>
+          </>
+        )}
+      />
 
       {expected && remaining !== null && (
         <div className="rounded-xl bg-brand/5 border border-brand/20 px-4 py-3">

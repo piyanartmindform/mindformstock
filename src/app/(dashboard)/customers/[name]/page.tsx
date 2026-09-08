@@ -24,7 +24,7 @@ export default async function CustomerDetailPage({ params }: { params: { name: s
       .order("sold_date", { ascending: false }),
     supabase
       .from("customers_mf")
-      .select("id, name, notes, contact_person, phone, address, tax_id")
+      .select("id, name, notes, contact_person, phone, address, tax_id, customer_type")
       .eq("name", customerName)
       .maybeSingle(),
   ]);

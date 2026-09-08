@@ -1,14 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { Select } from "@/components/ui/Select";
 import { CustomerCombobox } from "@/components/ui/CustomerCombobox";
-import { groupProductsByCategory } from "@/lib/utils";
+import { ProductPicker } from "@/components/ui/ProductPicker";
 
 const QrScanner = dynamic(() => import("@/components/ui/QrScanner").then((mod) => mod.QrScanner), { ssr: false });
 
@@ -45,11 +43,8 @@ export function RegisterForm({
   const [success, setSuccess] = useState(false);
   const [savedCode, setSavedCode] = useState("");
 
-  const selectedProduct = products.find((p) => p.id === selectedProductId);
-
   // Auto-fill warranty years when product changes
-  function handleProductChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const id = e.target.value;
+  function handleProductChange(id: string) {
     setSelectedProductId(id);
     const p = products.find((x) => x.id === id);
     if (p) setWarrantyYears(p.default_warranty_months / 12);
@@ -212,31 +207,7 @@ export function RegisterForm({
         </div>
 
         {/* Product */}
-        <Select label="สินค้า" value={selectedProductId} onChange={handleProductChange}>
-          <option value="">-- เลือกสินค้า --</option>
-          {groupProductsByCategory(products).map(({ category, items }) => (
-            <optgroup key={category} label={category}>
-              {items.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}{p.model ? ` (${p.model})` : ""}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        </Select>
-
-        {selectedProduct && (
-          <div className="flex items-center gap-3 rounded-xl bg-gray-50 px-3 py-2.5">
-            {selectedProduct.image_urls?.[0] ? (
-              <Image src={selectedProduct.image_urls[0]} alt={selectedProduct.name} width={80} height={56} className="h-14 w-auto max-w-20 rounded-lg object-contain shrink-0 bg-white" />
-            ) : (
-              <div className="w-14 h-14 rounded-lg bg-gray-200 flex items-center justify-center shrink-0 text-xl">📦</div>
-            )}
-            <p className="font-medium text-gray-900 text-sm truncate">
-              {selectedProduct.name}{selectedProduct.model ? ` (${selectedProduct.model})` : ""}
-            </p>
-          </div>
-        )}
+        <ProductPicker label="สินค้า" products={products} value={selectedProductId} onChange={handleProductChange} />
 
         {/* Customer */}
         <CustomerCombobox label="ชื่อลูกค้า" name="customer_name" defaultValue={defaultCustomerName} required />

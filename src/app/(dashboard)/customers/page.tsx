@@ -7,7 +7,7 @@ async function getData() {
   const [custRes, warrantyRes, stockOutRes] = await Promise.all([
     supabase
       .from("customers_mf")
-      .select("id, name, notes, contact_person, phone, address, tax_id, created_at")
+      .select("id, name, notes, contact_person, phone, address, tax_id, customer_type, created_at")
       .order("name"),
     supabase
       .from("qr_codes_mf")

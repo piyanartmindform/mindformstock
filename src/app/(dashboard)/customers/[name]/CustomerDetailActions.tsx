@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+
+type CustomerType = "juristic" | "individual";
 
 interface Props {
   customerName: string;
@@ -18,6 +21,7 @@ interface Props {
     phone: string | null;
     address: string | null;
     tax_id: string | null;
+    customer_type: CustomerType;
   } | null;
 }
 
@@ -25,6 +29,7 @@ export function CustomerDetailActions({ customerName, warrantyCount, stockOutCou
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(customer?.name ?? customerName);
+  const [editCustomerType, setEditCustomerType] = useState<CustomerType>(customer?.customer_type ?? "juristic");
   const [editContactPerson, setEditContactPerson] = useState(customer?.contact_person ?? "");
   const [editPhone, setEditPhone] = useState(customer?.phone ?? "");
   const [editAddress, setEditAddress] = useState(customer?.address ?? "");
@@ -42,21 +47,30 @@ export function CustomerDetailActions({ customerName, warrantyCount, stockOutCou
     setError("");
     const supabase = createClient();
 
-    const { error: updateError } = await supabase
+    const { data: updated, error: updateError } = await supabase
       .from("customers_mf")
       .update({
         name: trimmedName,
+        customer_type: editCustomerType,
         contact_person: editContactPerson.trim() || null,
         phone: editPhone.trim() || null,
         address: editAddress.trim() || null,
         tax_id: editTaxId.trim() || null,
         notes: editNotes.trim() || null,
       })
-      .eq("id", customer.id);
+      .eq("id", customer.id)
+      .select("id")
+      .maybeSingle();
 
     if (updateError) {
       setSaving(false);
       setError(updateError.code === "23505" ? "ชื่อลูกค้านี้มีอยู่แล้ว" : updateError.message);
+      return;
+    }
+    if (!updated) {
+      // no row affected (e.g. RLS blocked the write) — don't touch other tables
+      setSaving(false);
+      setError("บันทึกไม่สำเร็จ ไม่มีสิทธิ์แก้ไขข้อมูลนี้");
       return;
     }
 
@@ -89,7 +103,12 @@ export function CustomerDetailActions({ customerName, warrantyCount, stockOutCou
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <Link href="/customers" className="text-brand text-sm">← รายชื่อลูกค้า</Link>
-          <h1 className="text-xl font-bold text-gray-900 mt-2 truncate">{customerName}</h1>
+          <div className="flex items-center gap-2 mt-2">
+            <h1 className="text-xl font-bold text-gray-900 truncate">{customerName}</h1>
+            {customer && (
+              <Badge variant="gray">{customer.customer_type === "individual" ? "บุคคลธรรมดา" : "นิติบุคคล"}</Badge>
+            )}
+          </div>
           <p className="text-gray-500 text-sm">
             {warrantyCount} ประกัน · {stockOutCount} รายการขาย
           </p>
@@ -140,6 +159,22 @@ export function CustomerDetailActions({ customerName, warrantyCount, stockOutCou
               placeholder="ชื่อลูกค้า / บริษัท *"
               className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand"
             />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setEditCustomerType("juristic")}
+                className={`flex-1 h-11 rounded-xl text-sm font-medium border ${editCustomerType === "juristic" ? "bg-brand text-white border-brand" : "bg-white text-gray-600 border-gray-300"}`}
+              >
+                นิติบุคคล
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditCustomerType("individual")}
+                className={`flex-1 h-11 rounded-xl text-sm font-medium border ${editCustomerType === "individual" ? "bg-brand text-white border-brand" : "bg-white text-gray-600 border-gray-300"}`}
+              >
+                บุคคลธรรมดา
+              </button>
+            </div>
             <input
               value={editContactPerson}
               onChange={(e) => setEditContactPerson(e.target.value)}
