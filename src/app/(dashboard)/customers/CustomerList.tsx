@@ -350,7 +350,7 @@ export function CustomerList({ customers: initial }: { customers: Customer[] }) 
           <div>
             <p className="text-sm font-semibold text-gray-900">ตรวจสอบก่อนนำเข้า ({pendingImport.length} รายชื่อ)</p>
             <p className="text-xs text-gray-500 mt-0.5">
-              ถ้าชื่อนี้เป็นลูกค้าที่มีอยู่แล้ว (เช่น ชื่อย่อ/ชื่อเต็มต่างกัน) เลือก "ลูกค้าเดิม" เพื่อรวมข้อมูลเข้าไปแทนการสร้างซ้ำ
+              ถ้าชื่อนี้เป็นลูกค้าที่มีอยู่แล้ว (เช่น ชื่อย่อ/ชื่อเต็มต่างกัน) เลือก &quot;ลูกค้าเดิม&quot; เพื่อรวมข้อมูลเข้าไปแทนการสร้างซ้ำ
             </p>
           </div>
           <div className="space-y-2 max-h-96 overflow-y-auto">
@@ -368,7 +368,7 @@ export function CustomerList({ customers: initial }: { customers: Customer[] }) 
                   ))}
                 </select>
                 {row.matchTarget && row.matchTarget !== row.name && (
-                  <p className="text-[11px] text-brand">จะรวมข้อมูลเข้ากับลูกค้าเดิม "{row.matchTarget}"</p>
+                  <p className="text-[11px] text-brand">จะรวมข้อมูลเข้ากับลูกค้าเดิม &quot;{row.matchTarget}&quot;</p>
                 )}
               </div>
             ))}
