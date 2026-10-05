@@ -54,14 +54,19 @@ export default async function ExpectedStockInPage() {
                 const remaining = item.expected_quantity - item.received_quantity;
                 return (
                   <div key={item.id}>
-                    {role === "admin" && (
-                      <div className="flex justify-end items-center gap-1 mb-1">
-                        <Link href={`/stock-in/expected/${item.id}/edit`} className="text-xs text-brand underline px-1">
-                          แก้ไข
-                        </Link>
-                        {item.received_quantity === 0 && <DeleteExpectedButton id={item.id} />}
-                      </div>
-                    )}
+                    <div className="flex justify-end items-center gap-1 mb-1">
+                      <Link href={`/stock-in/expected/${item.id}/print`} className="text-xs text-brand underline px-1">
+                        พิมพ์ใบงาน
+                      </Link>
+                      {role === "admin" && (
+                        <>
+                          <Link href={`/stock-in/expected/${item.id}/edit`} className="text-xs text-brand underline px-1">
+                            แก้ไข
+                          </Link>
+                          {item.received_quantity === 0 && <DeleteExpectedButton id={item.id} />}
+                        </>
+                      )}
+                    </div>
                     <Link href={`/stock-in/new?expected=${item.id}`}>
                       <Card className="py-3 active:scale-95 transition-transform">
                         <div className="flex items-center gap-3">

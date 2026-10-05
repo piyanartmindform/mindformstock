@@ -118,9 +118,20 @@ export default async function ExpectedStockOutPage() {
         <div className="space-y-6">
           {openGroups.map((group) => (
             <div key={`open-${group.customer}-${group.project}`}>
-              <h2 className="font-semibold text-gray-900 mb-2">
-                {group.customer}{group.project ? ` · ${group.project}` : ""}
-              </h2>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <h2 className="font-semibold text-gray-900">
+                  {group.customer}{group.project ? ` · ${group.project}` : ""}
+                </h2>
+                <Link
+                  href={`/stock-out/expected/print?${new URLSearchParams({
+                    customer: group.customer,
+                    ...(group.project ? { project: group.project } : {}),
+                  }).toString()}`}
+                  className="text-xs text-brand underline shrink-0"
+                >
+                  พิมพ์ใบงาน
+                </Link>
+              </div>
               <div className="space-y-2">
                 {group.items.map((item: any) => {
                   const pct = Math.min(100, Math.round((item.sold_quantity / item.expected_quantity) * 100));
