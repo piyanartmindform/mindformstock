@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { formatDateShort, formatDateRange, groupWarrantyByCustomerProduct } from "@/lib/utils";
 import { ReportDateFilter } from "./ReportDateFilter";
+import { HistoryGroups } from "./HistoryGroups";
 import { getReportData } from "@/lib/queries/reports";
 
 function ProductThumb({ src, alt }: { src?: string | null; alt: string }) {
@@ -70,23 +71,7 @@ export default async function ReportsPage({
       <div>
         <h2 className="font-semibold text-gray-900 mb-3">{historyLabel}</h2>
         <div className="space-y-2">
-          {(isFiltered ? stockIn : stockIn.slice(0, 20)).map((item: any) => (
-            <Link key={item.id} href={`/stock-in/${item.id}`}>
-              <Card className="py-2.5 active:scale-95 transition-transform">
-                <div className="flex justify-between items-center gap-3 text-sm">
-                  <ProductThumb src={item.products_mf?.image_urls?.[0]} alt={item.products_mf?.name ?? ""} />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 truncate">{item.products_mf?.name}</p>
-                    <p className="text-xs text-gray-400">{item.supplier || "ไม่ระบุซัพพลายเออร์"}</p>
-                  </div>
-                  <div className="text-right ml-2 shrink-0">
-                    <p className="text-green-600 font-medium">+{item.quantity} {item.products_mf?.unit}</p>
-                    <p className="text-xs text-gray-400">{formatDateShort(item.received_date)}</p>
-                  </div>
-                </div>
-              </Card>
-            </Link>
-          ))}
+          <HistoryGroups items={stockIn} kind="in" limit={isFiltered ? undefined : 15} />
           {isFiltered && stockIn.length === 0 && (
             <p className="text-sm text-gray-400 text-center py-4">ไม่พบรายการในช่วงวันที่นี้</p>
           )}
@@ -96,25 +81,7 @@ export default async function ReportsPage({
       <div>
         <h2 className="font-semibold text-gray-900 mb-3">{historyOutLabel}</h2>
         <div className="space-y-2">
-          {(isFiltered ? stockOut : stockOut.slice(0, 20)).map((item: any) => (
-            <Link key={item.id} href={`/stock-out/${item.id}`}>
-              <Card className="py-2.5 active:scale-95 transition-transform">
-                <div className="flex justify-between items-center gap-3 text-sm">
-                  <ProductThumb src={item.products_mf?.image_urls?.[0]} alt={item.products_mf?.name ?? ""} />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 truncate">{item.products_mf?.name}</p>
-                    <p className="text-xs text-gray-400">
-                      {item.customer_name}{item.project_name ? ` · ${item.project_name}` : ""}
-                    </p>
-                  </div>
-                  <div className="text-right ml-2 shrink-0">
-                    <p className="text-red-500 font-medium">-{item.quantity} {item.products_mf?.unit}</p>
-                    <p className="text-xs text-gray-400">{formatDateShort(item.sold_date)}</p>
-                  </div>
-                </div>
-              </Card>
-            </Link>
-          ))}
+          <HistoryGroups items={stockOut} kind="out" limit={isFiltered ? undefined : 15} />
           {isFiltered && stockOut.length === 0 && (
             <p className="text-sm text-gray-400 text-center py-4">ไม่พบรายการในช่วงวันที่นี้</p>
           )}
