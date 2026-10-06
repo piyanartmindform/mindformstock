@@ -13,7 +13,11 @@ async function getProducts() {
   return (data ?? []) as any;
 }
 
-export default async function NewExpectedOutPage() {
+export default async function NewExpectedOutPage({
+  searchParams,
+}: {
+  searchParams: { customer?: string; project?: string };
+}) {
   const role = await getCurrentUserRole();
   if (role !== "admin") redirect("/stock-out/expected");
 
@@ -25,7 +29,11 @@ export default async function NewExpectedOutPage() {
         <h1 className="text-xl font-bold text-gray-900">แจ้งขายล่วงหน้า</h1>
         <p className="text-sm text-gray-500 mt-1">บอกจำนวนที่ลูกค้าสั่งไว้ ทีมส่งของจะสแกนนับถอยหลังให้ครบทีหลัง</p>
       </div>
-      <NewExpectedOutForm products={products} />
+      <NewExpectedOutForm
+        products={products}
+        defaultCustomer={searchParams.customer ?? ""}
+        defaultProject={searchParams.project ?? ""}
+      />
     </div>
   );
 }

@@ -244,7 +244,7 @@ export function StockOutForm({
             onClick={() => { setForceQuantityMode(true); setScannedCodes([]); setError(""); }}
             className="w-full min-h-12 px-4 py-2 rounded-xl border border-sky-300 bg-sky-50 text-sm font-medium text-sky-800 text-left active:bg-sky-100"
           >
-            สินค้านี้ไม่มีบาร์โค้ดติดสต็อกไว้? กดที่นี่เพื่อขายแบบนับจำนวนแทน
+            สินค้านี้ไม่มีบาร์โค้ดติดสต็อกไว้? <span className="text-red-700">กดที่นี่เพื่อขายแบบนับจำนวนแทน</span>
           </button>
         </>
       ) : (
@@ -300,8 +300,8 @@ export function StockOutForm({
 
       {error && <p className="text-sm text-red-500">{error}</p>}
 
-      <div className="fixed bottom-16 left-0 right-0 p-4 bg-white border-t border-gray-200 md:relative md:bottom-auto md:left-auto md:right-auto md:bg-transparent md:border-0 md:p-0">
-        <Button type="submit" fullWidth loading={loading} size="lg">
+      <div className="fixed bottom-16 left-0 right-0 p-3 bg-white border-t border-gray-200 md:relative md:bottom-auto md:left-auto md:right-auto md:bg-transparent md:border-0 md:p-0">
+        <Button type="submit" fullWidth loading={loading}>
           บันทึกขายออก
         </Button>
       </div>

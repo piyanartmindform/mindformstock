@@ -118,9 +118,33 @@ export default async function ExpectedStockOutPage() {
         <div className="space-y-6">
           {openGroups.map((group) => (
             <div key={`open-${group.customer}-${group.project}`}>
-              <h2 className="font-semibold text-gray-900 mb-2">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <h2 className="font-semibold text-gray-900">
                   {group.customer}{group.project ? ` · ${group.project}` : ""}
                 </h2>
+                {role === "admin" && (
+                  <div className="flex items-center gap-2 shrink-0">
+                  <Link
+                    href={`/stock-out/expected/new?${new URLSearchParams({
+                      customer: group.customer,
+                      ...(group.project ? { project: group.project } : {}),
+                    }).toString()}`}
+                    className="inline-flex items-center justify-center h-8 px-2.5 rounded-lg border text-xs font-medium border-gray-300 bg-white text-gray-700 active:bg-gray-100"
+                  >
+                    + เพิ่มสินค้า
+                  </Link>
+                  <Link
+                    href={`/deliveries/new?${new URLSearchParams({
+                      customer: group.customer,
+                      ...(group.project ? { project: group.project } : {}),
+                    }).toString()}`}
+                    className="inline-flex items-center justify-center h-8 px-2.5 rounded-lg border text-xs font-medium border-sky-300 bg-sky-50 text-sky-800 active:bg-sky-100"
+                  >
+                    🚚 สร้างรอบส่ง
+                  </Link>
+                  </div>
+                )}
+              </div>
               <div className="space-y-2">
                 {group.items.map((item: any) => {
                   const pct = Math.min(100, Math.round((item.sold_quantity / item.expected_quantity) * 100));

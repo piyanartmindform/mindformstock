@@ -11,6 +11,7 @@ const navItems = [
   { href: "/stock-in/expected", label: "รายการที่รอรับเข้า", icon: "📋" },
   { href: "/stock-out", label: "ขายออก", icon: "🛒" },
   { href: "/stock-out/expected", label: "รายการที่รอส่งออก", icon: "📤" },
+  { href: "/deliveries", label: "รอบส่ง / ใบส่งงาน", icon: "🚚" },
   { href: "/warranty", label: "QR / ประกัน", icon: "🔲" },
   { href: "/warranty/register", label: "ลงทะเบียนประกัน", icon: "✍️" },
   { href: "/warranty/generate", label: "สร้าง QR Batch", icon: "🏷️", adminOnly: true },
