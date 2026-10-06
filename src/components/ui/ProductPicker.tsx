@@ -36,14 +36,32 @@ export function ProductPicker<T extends BaseProduct>({
 }: ProductPickerProps<T>) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [categoryChoice, setCategoryChoice] = useState("");
+
+  const categories = useMemo(() => {
+    const byName = new Map<string, number>();
+    for (const p of products) {
+      const name = p.categories_mf?.name;
+      if (name && !byName.has(name)) byName.set(name, p.categories_mf?.sort_order ?? 0);
+    }
+    return Array.from(byName.entries()).sort((a, b) => a[1] - b[1]).map(([name]) => name);
+  }, [products]);
 
   const selected = products.find((p) => p.id === value) ?? null;
 
+  // start on the selected product's category, otherwise the first category
+  const category =
+    categoryChoice || selected?.categories_mf?.name || categories[0] || "";
+  const setCategory = setCategoryChoice;
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return products;
-    return products.filter((p) => p.name.toLowerCase().includes(q) || (p.model ?? "").toLowerCase().includes(q));
-  }, [products, query]);
+    return products.filter(
+      (p) =>
+        (!category || p.categories_mf?.name === category) &&
+        (!q || p.name.toLowerCase().includes(q) || (p.model ?? "").toLowerCase().includes(q))
+    );
+  }, [products, query, category]);
 
   const grouped = groupProductsByCategory(filtered);
 
@@ -98,7 +116,8 @@ export function ProductPicker<T extends BaseProduct>({
 
       {open && (
         <div className="fixed inset-0 z-50 flex flex-col bg-white">
-          <div className="flex items-center gap-3 p-4 border-b border-gray-200 shrink-0">
+          <div className="p-4 border-b border-gray-200 shrink-0 space-y-3">
+          <div className="flex items-center gap-3">
             <button type="button" onClick={() => setOpen(false)} className="p-1 text-gray-500" aria-label="ปิด">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -111,6 +130,19 @@ export function ProductPicker<T extends BaseProduct>({
               placeholder="ค้นหาสินค้า..."
               className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-brand"
             />
+          </div>
+          {categories.length > 1 && (
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              aria-label="หมวดหมู่สินค้า"
+              className="w-full h-12 px-4 rounded-xl border border-gray-300 bg-white text-base font-medium text-gray-900"
+            >
+              {categories.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          )}
           </div>
           <div className="flex-1 overflow-y-auto pb-6">
             {grouped.length === 0 ? (

@@ -9,6 +9,7 @@ const menuItems = [
   { href: "/stock-in/expected", label: "รายการที่รอรับเข้า", icon: "📋" },
   { href: "/stock-out/expected", label: "รายการที่รอส่งออก", icon: "📤" },
   { href: "/deliveries", label: "รอบส่ง / ใบส่งงาน", icon: "🚚" },
+  { href: "/conversions", label: "ใบแปลงสภาพ", icon: "🔧" },
   { href: "/customers", label: "รายชื่อลูกค้า", icon: "👥" },
   { href: "/warranty/register", label: "ลงทะเบียนประกัน", icon: "✍️" },
   { href: "/warranty/generate", label: "สร้าง QR Batch", icon: "🏷️", adminOnly: true },
