@@ -5,13 +5,20 @@ import { WarrantyList } from "./WarrantyList";
 
 async function getQRCodes() {
   const supabase = createClient();
-  const { data } = await supabase
-    .from("qr_codes_mf")
-    .select("*, products_mf(name, model)")
-    .eq("status", "registered")
-    .order("registered_at", { ascending: false })
-    .limit(100);
-  return data ?? [];
+  // PostgREST caps one response at 1000 rows, so page through until everything is loaded
+  const pageSize = 1000;
+  const all: any[] = [];
+  for (let from = 0; ; from += pageSize) {
+    const { data } = await supabase
+      .from("qr_codes_mf")
+      .select("*, products_mf(name, model)")
+      .eq("status", "registered")
+      .order("registered_at", { ascending: false })
+      .range(from, from + pageSize - 1);
+    all.push(...(data ?? []));
+    if (!data || data.length < pageSize) break;
+  }
+  return all;
 }
 
 export default async function WarrantyPage() {
