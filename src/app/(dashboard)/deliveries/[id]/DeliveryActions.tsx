@@ -127,7 +127,7 @@ export function DeliveryActions({
 
       {next && (
         <Button fullWidth loading={busy} onClick={advance}>
-          เปลี่ยนเป็น "{STATUS_LABEL[next]}"
+          {`เปลี่ยนเป็น "${STATUS_LABEL[next]}"`}
         </Button>
       )}
 
