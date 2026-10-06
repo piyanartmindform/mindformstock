@@ -76,7 +76,7 @@ function RegisterStatus({ item, registeredCounts }: { item: any; registeredCount
   return (
     <div className="flex items-center justify-end gap-2 mt-1">
       {registered > 0 && <span className="text-xs text-amber-600">ลงทะเบียนแล้ว {registered}/{target}</span>}
-      <Link href={registerHref(item)} className="text-xs text-brand underline px-1">
+      <Link href={registerHref(item)} className="inline-flex items-center justify-center h-8 px-2.5 rounded-lg border text-xs font-medium border-gray-300 bg-white text-gray-700 active:bg-gray-100">
         ลงทะเบียนประกัน →
       </Link>
     </div>
@@ -118,36 +118,16 @@ export default async function ExpectedStockOutPage() {
         <div className="space-y-6">
           {openGroups.map((group) => (
             <div key={`open-${group.customer}-${group.project}`}>
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <h2 className="font-semibold text-gray-900">
+              <h2 className="font-semibold text-gray-900 mb-2">
                   {group.customer}{group.project ? ` · ${group.project}` : ""}
                 </h2>
-                <Link
-                  href={`/stock-out/expected/print?${new URLSearchParams({
-                    customer: group.customer,
-                    ...(group.project ? { project: group.project } : {}),
-                  }).toString()}`}
-                  className="text-xs text-brand underline shrink-0"
-                >
-                  พิมพ์ใบงาน
-                </Link>
-              </div>
               <div className="space-y-2">
                 {group.items.map((item: any) => {
                   const pct = Math.min(100, Math.round((item.sold_quantity / item.expected_quantity) * 100));
                   const remaining = item.expected_quantity - item.sold_quantity;
                   return (
-                    <div key={item.id}>
-                      {role === "admin" && (
-                        <div className="flex justify-end items-center gap-1 mb-1">
-                          <Link href={`/stock-out/expected/${item.id}/edit`} className="text-xs text-brand underline px-1">
-                            แก้ไข
-                          </Link>
-                          {item.sold_quantity === 0 && <DeleteExpectedButton id={item.id} />}
-                        </div>
-                      )}
-                      <Link href={`/stock-out/new?expected=${item.id}`}>
-                        <Card className="py-3 active:scale-95 transition-transform">
+                    <Card key={item.id} className="py-3">
+                        <Link href={`/stock-out/new?expected=${item.id}`} className="block active:opacity-70">
                           <div className="flex items-center gap-3">
                             {item.products_mf?.image_urls?.[0] ? (
                               <Image src={item.products_mf.image_urls[0]} alt={item.products_mf.name} width={80} height={56} className="h-14 w-auto max-w-20 rounded-lg object-contain shrink-0 bg-gray-50" />
@@ -158,28 +138,46 @@ export default async function ExpectedStockOutPage() {
                               <div className="flex items-center justify-between gap-2">
                                 <p className="font-medium text-gray-900 text-sm truncate">
                                   {item.products_mf?.name ?? "-"}
-                                  {item.products_mf?.model && <span className="text-gray-400 font-normal"> · {item.products_mf.model}</span>}
+                                  {item.products_mf?.model && <span className="text-gray-500 font-normal"> · {item.products_mf.model}</span>}
                                 </p>
                                 <span className="text-xs font-semibold text-brand shrink-0">
                                   {item.sold_quantity}/{item.expected_quantity}
                                 </span>
                               </div>
-                              <div className="h-1.5 rounded-full bg-gray-100 mt-1.5 overflow-hidden">
+                              <div className="h-2 rounded-full bg-gray-200 mt-2 overflow-hidden">
                                 <div className="h-full bg-brand" style={{ width: `${pct}%` }} />
                               </div>
-                              <p className="text-xs text-gray-400 mt-1">เหลืออีก {remaining} {item.products_mf?.unit}</p>
+                              <p className="text-xs text-gray-500 mt-1">เหลืออีก {remaining} {item.products_mf?.unit}</p>
                               {item.note && <p className="text-xs text-gray-500 mt-0.5">{item.note}</p>}
                             </div>
                           </div>
-                        </Card>
-                      </Link>
-                      <RegisterStatus item={item} registeredCounts={registeredCounts} />
-                    </div>
-                  );
-                })}
+                        </Link>
+                        <div className="flex flex-wrap items-center justify-end gap-2 mt-3 pt-3 border-t border-gray-200">
+                          <Link
+                            href={`/stock-out/expected/print?${new URLSearchParams({
+                              customer: group.customer,
+                              ...(group.project ? { project: group.project } : {}),
+                            }).toString()}`}
+                            className="inline-flex items-center justify-center h-8 px-2.5 rounded-lg border text-xs font-medium border-gray-300 bg-white text-gray-700 active:bg-gray-100"
+                          >
+                            🖨️ {group.items.length > 1 ? "พิมพ์ใบงานทั้งกลุ่ม" : "พิมพ์ใบงาน"}
+                          </Link>
+                          {role === "admin" && (
+                            <>
+                              <Link href={`/stock-out/expected/${item.id}/edit`} className="inline-flex items-center justify-center h-8 px-2.5 rounded-lg border text-xs font-medium border-gray-300 bg-white text-gray-700 active:bg-gray-100">
+                                แก้ไข
+                              </Link>
+                              {item.sold_quantity === 0 && <DeleteExpectedButton id={item.id} />}
+                            </>
+                          )}
+                        </div>
+                        <RegisterStatus item={item} registeredCounts={registeredCounts} />
+                      </Card>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
 
           {closedGroups.length > 0 && (
             <div>
@@ -192,15 +190,14 @@ export default async function ExpectedStockOutPage() {
                     </h3>
                     <div className="space-y-2">
                       {group.items.map((item: any) => (
-                        <div key={item.id}>
-                          <Card className="py-3 opacity-70">
+                        <Card key={item.id} className="py-3">
                             <div className="flex items-center justify-between gap-3">
                               <div className="min-w-0">
                                 <p className="font-medium text-gray-900 text-sm truncate">
                                   {item.products_mf?.name ?? "-"}
-                                  {item.products_mf?.model && <span className="text-gray-400 font-normal"> · {item.products_mf.model}</span>}
+                                  {item.products_mf?.model && <span className="text-gray-500 font-normal"> · {item.products_mf.model}</span>}
                                 </p>
-                                <p className="text-xs text-gray-400 mt-0.5">
+                                <p className="text-xs text-gray-500 mt-0.5">
                                   ส่งแล้ว {item.sold_quantity}/{item.expected_quantity} {item.products_mf?.unit}
                                   {item.closed_at && ` · ปิดเมื่อ ${formatDate(item.closed_at)}`}
                                 </p>
@@ -209,9 +206,12 @@ export default async function ExpectedStockOutPage() {
                                 {item.sold_quantity >= item.expected_quantity ? "ครบ" : "บางส่วน"}
                               </Badge>
                             </div>
+                            {item.sold_quantity > 0 && (
+                            <div className="mt-3 pt-3 border-t border-gray-200">
+                              <RegisterStatus item={item} registeredCounts={registeredCounts} />
+                            </div>
+                          )}
                           </Card>
-                          <RegisterStatus item={item} registeredCounts={registeredCounts} />
-                        </div>
                       ))}
                     </div>
                   </div>

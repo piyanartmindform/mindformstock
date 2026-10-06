@@ -215,7 +215,7 @@ export function StockInForm({
           <button
             type="button"
             onClick={() => { setForceQuantityMode(true); setScannedCodes([]); setError(""); }}
-            className="text-xs text-brand underline"
+            className="w-full min-h-12 px-4 py-2 rounded-xl border border-sky-300 bg-sky-50 text-sm font-medium text-sky-800 text-left active:bg-sky-100"
           >
             สินค้านี้ไม่มีบาร์โค้ดติดกล่องไว้? กดที่นี่เพื่อรับเข้าแบบนับจำนวนแทน
           </button>
@@ -225,7 +225,7 @@ export function StockInForm({
           <button
             type="button"
             onClick={() => setForceQuantityMode(false)}
-            className="text-xs text-brand underline"
+            className="w-full min-h-12 px-4 py-2 rounded-xl border border-sky-300 bg-sky-50 text-sm font-medium text-sky-800 text-left active:bg-sky-100"
           >
             ← กลับไปสแกนบาร์โค้ดแทน
           </button>

@@ -44,7 +44,7 @@ export default async function NewStockInPage({
       <div className="pt-2 mb-6">
         <h1 className="text-xl font-bold text-gray-900">บันทึกรับสินค้าเข้า</h1>
         {!expected && openExpectedCount > 0 && (
-          <Link href="/stock-in/expected" className="text-sm text-brand mt-1 inline-flex items-center gap-1">
+          <Link href="/stock-in/expected" className="mt-3 flex items-center justify-between gap-2 min-h-12 px-4 py-2 rounded-xl border border-amber-300 bg-amber-50 text-sm font-medium text-amber-900 active:bg-amber-100">
             📋 มี {openExpectedCount} รายการรอรับเข้าล่วงหน้า — สแกนที่นี่แทน →
           </Link>
         )}

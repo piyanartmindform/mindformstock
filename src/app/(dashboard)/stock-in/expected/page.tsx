@@ -53,23 +53,9 @@ export default async function ExpectedStockInPage() {
                 const pct = Math.min(100, Math.round((item.received_quantity / item.expected_quantity) * 100));
                 const remaining = item.expected_quantity - item.received_quantity;
                 return (
-                  <div key={item.id}>
-                    <div className="flex justify-end items-center gap-1 mb-1">
-                      <Link href={`/stock-in/expected/${item.id}/print`} className="text-xs text-brand underline px-1">
-                        พิมพ์ใบงาน
-                      </Link>
-                      {role === "admin" && (
-                        <>
-                          <Link href={`/stock-in/expected/${item.id}/edit`} className="text-xs text-brand underline px-1">
-                            แก้ไข
-                          </Link>
-                          {item.received_quantity === 0 && <DeleteExpectedButton id={item.id} />}
-                        </>
-                      )}
-                    </div>
-                    <Link href={`/stock-in/new?expected=${item.id}`}>
-                      <Card className="py-3 active:scale-95 transition-transform">
-                        <div className="flex items-center gap-3">
+                  <Card key={item.id} className="py-3">
+                    <Link href={`/stock-in/new?expected=${item.id}`} className="block active:opacity-70">
+                      <div className="flex items-center gap-3">
                           {item.products_mf?.image_urls?.[0] ? (
                             <Image src={item.products_mf.image_urls[0]} alt={item.products_mf.name} width={80} height={56} className="h-14 w-auto max-w-20 rounded-lg object-contain shrink-0 bg-gray-50" />
                           ) : (
@@ -79,24 +65,36 @@ export default async function ExpectedStockInPage() {
                             <div className="flex items-center justify-between gap-2">
                               <p className="font-medium text-gray-900 text-sm truncate">
                                 {item.products_mf?.name ?? "-"}
-                                {item.products_mf?.model && <span className="text-gray-400 font-normal"> · {item.products_mf.model}</span>}
+                                {item.products_mf?.model && <span className="text-gray-500 font-normal"> · {item.products_mf.model}</span>}
                               </p>
                               <span className="text-xs font-semibold text-brand shrink-0">
                                 {item.received_quantity}/{item.expected_quantity}
                               </span>
                             </div>
-                            <div className="h-1.5 rounded-full bg-gray-100 mt-1.5 overflow-hidden">
+                            <div className="h-2 rounded-full bg-gray-200 mt-2 overflow-hidden">
                               <div className="h-full bg-brand" style={{ width: `${pct}%` }} />
                             </div>
-                            <p className="text-xs text-gray-400 mt-1">
+                            <p className="text-xs text-gray-500 mt-1">
                               เหลืออีก {remaining} {item.products_mf?.unit} · แจ้งเมื่อ {formatDate(item.created_at)}
                             </p>
                             {item.note && <p className="text-xs text-gray-500 mt-0.5">{item.note}</p>}
                           </div>
                         </div>
-                      </Card>
-                    </Link>
-                  </div>
+                      </Link>
+                    <div className="flex flex-wrap items-center justify-end gap-2 mt-3 pt-3 border-t border-gray-200">
+                      <Link href={`/stock-in/expected/${item.id}/print`} className="inline-flex items-center justify-center h-8 px-2.5 rounded-lg border text-xs font-medium border-gray-300 bg-white text-gray-700 active:bg-gray-100">
+                        🖨️ พิมพ์ใบงาน
+                      </Link>
+                      {role === "admin" && (
+                        <>
+                          <Link href={`/stock-in/expected/${item.id}/edit`} className="inline-flex items-center justify-center h-8 px-2.5 rounded-lg border text-xs font-medium border-gray-300 bg-white text-gray-700 active:bg-gray-100">
+                            แก้ไข
+                          </Link>
+                          {item.received_quantity === 0 && <DeleteExpectedButton id={item.id} />}
+                        </>
+                      )}
+                    </div>
+                  </Card>
                 );
               })}
             </div>
@@ -112,9 +110,9 @@ export default async function ExpectedStockInPage() {
                       <div className="min-w-0">
                         <p className="font-medium text-gray-900 text-sm truncate">
                           {item.products_mf?.name ?? "-"}
-                          {item.products_mf?.model && <span className="text-gray-400 font-normal"> · {item.products_mf.model}</span>}
+                          {item.products_mf?.model && <span className="text-gray-500 font-normal"> · {item.products_mf.model}</span>}
                         </p>
-                        <p className="text-xs text-gray-400 mt-0.5">
+                        <p className="text-xs text-gray-500 mt-0.5">
                           รับแล้ว {item.received_quantity}/{item.expected_quantity} {item.products_mf?.unit}
                           {item.closed_at && ` · ปิดเมื่อ ${formatDate(item.closed_at)}`}
                         </p>

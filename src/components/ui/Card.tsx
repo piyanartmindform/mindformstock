@@ -10,7 +10,7 @@ export function Card({ children, className, onClick }: CardProps) {
   return (
     <div
       className={cn(
-        "rounded-2xl bg-white p-4 shadow-sm border border-gray-100",
+        "rounded-2xl bg-white p-4 shadow-sm border border-gray-200",
         onClick && "cursor-pointer active:scale-95 transition-transform",
         className
       )}

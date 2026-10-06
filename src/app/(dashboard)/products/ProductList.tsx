@@ -32,27 +32,19 @@ export function ProductList({ products, categories }: { products: any[]; categor
   return (
     <div className="space-y-4">
       {/* Category filter */}
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        <button
-          onClick={() => setCategoryId("all")}
-          className={`h-9 px-4 rounded-xl text-sm font-medium whitespace-nowrap shrink-0 ${
-            categoryId === "all" ? "bg-brand text-white" : "bg-gray-100 text-gray-600"
-          }`}
-        >
-          ทั้งหมด
-        </button>
+      <select
+        value={categoryId}
+        onChange={(e) => setCategoryId(e.target.value)}
+        aria-label="หมวดหมู่สินค้า"
+        className="w-full h-12 px-4 rounded-xl border border-gray-300 bg-white text-base font-medium text-gray-900"
+      >
+        <option value="all">ทั้งหมด</option>
         {categories.map((c) => (
-          <button
-            key={c.id}
-            onClick={() => setCategoryId(c.id)}
-            className={`h-9 px-4 rounded-xl text-sm font-medium whitespace-nowrap shrink-0 ${
-              categoryId === c.id ? "bg-brand text-white" : "bg-gray-100 text-gray-600"
-            }`}
-          >
+          <option key={c.id} value={c.id}>
             {c.name}
-          </button>
+          </option>
         ))}
-      </div>
+      </select>
 
       {/* Sort by quantity */}
       <div className="flex items-center gap-2">
