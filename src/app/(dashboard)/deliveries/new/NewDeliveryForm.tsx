@@ -16,6 +16,7 @@ interface Item {
   unit: string;
   max: number;
   closed: boolean;
+  image: string | null;
 }
 
 interface StockLine {
@@ -157,6 +158,12 @@ export function NewDeliveryForm({
         {items.map((i) => (
           <div key={i.id} className="rounded-xl border border-gray-200 bg-white p-3 space-y-2">
             <div className="flex items-center gap-3">
+              {i.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={i.image} alt={i.name} className="w-12 h-12 rounded-lg object-contain bg-gray-50 border border-gray-100 shrink-0" />
+              ) : (
+                <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 text-lg">📦</div>
+              )}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">
                   {i.name}{i.model && <span className="text-gray-500 font-normal"> · {i.model}</span>}

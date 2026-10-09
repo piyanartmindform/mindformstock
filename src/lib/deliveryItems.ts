@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export const ITEM_SELECT =
-  "id, expected_id, quantity, custom_name, custom_unit, custom_source, item_note, image_paths, products_mf(name, model, unit), stock_out_expected_mf(expected_quantity)";
+  "id, expected_id, quantity, custom_name, custom_unit, custom_source, item_note, image_paths, products_mf(name, model, unit, image_urls), stock_out_expected_mf(expected_quantity)";
 
 export function itemName(i: any): string {
   return i.products_mf?.name ?? i.custom_name ?? "-";
@@ -9,6 +9,10 @@ export function itemName(i: any): string {
 
 export function itemUnit(i: any): string {
   return i.products_mf?.unit ?? i.custom_unit ?? "";
+}
+
+export function productImage(i: any): string | null {
+  return i.products_mf?.image_urls?.[0] ?? null;
 }
 
 export function isCustom(i: any): boolean {

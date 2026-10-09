@@ -18,7 +18,7 @@ export default async function NewDeliveryPage({
   const supabase = createClient();
   let itemsQuery = supabase
     .from("stock_out_expected_mf")
-    .select("id, product_id, expected_quantity, status, products_mf(name, model, unit)")
+    .select("id, product_id, expected_quantity, status, products_mf(name, model, unit, image_urls)")
     .eq("customer_name", customer)
     .order("created_at", { ascending: true });
   itemsQuery = project ? itemsQuery.eq("project_name", project) : itemsQuery.is("project_name", null);
@@ -47,6 +47,7 @@ export default async function NewDeliveryPage({
       name: i.products_mf?.name ?? "-",
       model: i.products_mf?.model ?? null,
       unit: i.products_mf?.unit ?? "",
+      image: i.products_mf?.image_urls?.[0] ?? null,
       max: i.expected_quantity - (planned.get(i.id) ?? 0),
       closed: i.status === "closed",
     }))

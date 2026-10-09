@@ -6,7 +6,7 @@ import { getAuthUser } from "@/lib/auth";
 import { PrintButton } from "@/components/ui/PrintButton";
 import { DocumentHeader } from "@/components/ui/DocumentHeader";
 import { SignatureBlock } from "@/components/ui/SignatureBlock";
-import { ITEM_SELECT, getItemPhotoUrls, isCustom, itemName, itemUnit } from "@/lib/deliveryItems";
+import { ITEM_SELECT, getItemPhotoUrls, isCustom, itemName, itemUnit, productImage } from "@/lib/deliveryItems";
 
 async function getPrinterName() {
   const user = await getAuthUser();
@@ -92,6 +92,7 @@ export default async function PrintDeliveryPage({
             <tr className="text-left text-gray-500 border-b border-gray-300">
               {!isNote && <th className="py-2 pr-2 font-medium w-8">✓</th>}
               <th className="py-2 pr-2 font-medium w-8">#</th>
+              <th className="py-2 pr-2 font-medium w-14"></th>
               <th className="py-2 pr-2 font-medium">รายการสินค้า</th>
               <th className="py-2 text-right font-medium">จำนวน</th>
             </tr>
@@ -105,6 +106,12 @@ export default async function PrintDeliveryPage({
                   </td>
                 )}
                 <td className="py-2.5 pr-2 text-gray-500">{idx + 1}</td>
+                <td className="py-2.5 pr-2">
+                  {productImage(i) ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={productImage(i)!} alt={itemName(i)} className="w-12 h-12 rounded-md object-contain bg-gray-50 border border-gray-100" />
+                  ) : null}
+                </td>
                 <td className="py-2.5 pr-2 text-gray-900">
                   {itemName(i)}
                   {i.products_mf?.model && <span className="text-gray-500"> · {i.products_mf.model}</span>}
@@ -132,7 +139,7 @@ export default async function PrintDeliveryPage({
           </tbody>
           <tfoot>
             <tr>
-              <td colSpan={isNote ? 2 : 3} className="py-2 text-right text-gray-500">รวม</td>
+              <td colSpan={isNote ? 3 : 4} className="py-2 text-right text-gray-500">รวม</td>
               <td className="py-2 text-right font-bold text-gray-900 whitespace-nowrap">{totalQty} ชิ้น</td>
             </tr>
           </tfoot>

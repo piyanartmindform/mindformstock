@@ -16,7 +16,7 @@ import { DeliveryActions } from "./DeliveryActions";
 import { ItemPhotos } from "./ItemPhotos";
 import { AddCustomItem, ItemEditor } from "./ItemEditor";
 import { AddStockItem, type AvailableItem } from "./AddStockItem";
-import { ITEM_SELECT, getItemPhotoUrls, isCustom, itemName, itemUnit } from "@/lib/deliveryItems";
+import { ITEM_SELECT, getItemPhotoUrls, isCustom, itemName, itemUnit, productImage } from "@/lib/deliveryItems";
 
 export default async function DeliveryDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -128,8 +128,12 @@ export default async function DeliveryDetailPage({ params }: { params: { id: str
         <p className="font-medium text-gray-900">รายการสินค้า</p>
         {(delivery.delivery_items_mf ?? []).map((i: any) => (
           <div key={i.id} className="border-b border-gray-100 pb-3 last:border-0 last:pb-0">
-            <div className="flex items-start justify-between gap-2">
-              <span className="text-gray-900">
+            <div className="flex items-start gap-3">
+              {productImage(i) && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={productImage(i)!} alt={itemName(i)} className="w-12 h-12 rounded-lg object-contain bg-gray-50 border border-gray-100 shrink-0" />
+              )}
+              <span className="flex-1 min-w-0 text-gray-900">
                 {itemName(i)}
                 {i.products_mf?.model && <span className="text-gray-500"> · {i.products_mf.model}</span>}
                 {isCustom(i) && (
