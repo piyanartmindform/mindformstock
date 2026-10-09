@@ -7,7 +7,10 @@ create index if not exists qr_codes_mf_stock_out_expected_id_idx
   where stock_out_expected_id is not null;
 
 -- Link old registrations only when product + customer + project identify
--- exactly one expected-stock-out row. Ambiguous history is left untouched.
+-- exactly one expected-stock-out row AND the registration happened after that row
+-- was created (a registration cannot belong to a later order). Ambiguous history is
+-- left untouched. (The first version of this file lacked the registered_at check and
+-- wrongly linked 69 old Nestle registrations to a newer order; see fix-warranty-backfill.sql.)
 with unique_matches as (
   select
     q.id as qr_id,
@@ -17,6 +20,7 @@ with unique_matches as (
     on e.product_id = q.product_id
    and e.customer_name = q.customer_name
    and coalesce(e.project_name, '') = coalesce(q.project_name, '')
+   and q.registered_at >= e.created_at
   where q.status = 'registered'
     and q.stock_out_expected_id is null
   group by q.id
