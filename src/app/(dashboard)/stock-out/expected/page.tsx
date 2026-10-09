@@ -206,9 +206,22 @@ export default async function ExpectedStockOutPage() {
               <div className="space-y-5">
                 {closedGroups.map((group) => (
                   <div key={`closed-${group.customer}-${group.project}`}>
-                    <h3 className="font-medium text-gray-700 text-sm mb-2">
-                      {group.customer}{group.project ? ` · ${group.project}` : ""}
-                    </h3>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <h3 className="font-medium text-gray-700 text-sm">
+                        {group.customer}{group.project ? ` · ${group.project}` : ""}
+                      </h3>
+                      {role === "admin" && (
+                        <Link
+                          href={`/deliveries/new?${new URLSearchParams({
+                            customer: group.customer,
+                            ...(group.project ? { project: group.project } : {}),
+                          }).toString()}`}
+                          className="inline-flex items-center justify-center h-8 px-2.5 rounded-lg border text-xs font-medium border-sky-300 bg-sky-50 text-sky-800 active:bg-sky-100 shrink-0"
+                        >
+                          🚚 สร้างรอบส่ง
+                        </Link>
+                      )}
+                    </div>
                     <div className="space-y-2">
                       {group.items.map((item: any) => (
                         <Card key={item.id} className="py-3">

@@ -14,6 +14,7 @@ import {
 } from "@/lib/deliveries";
 import { DeliveryActions } from "./DeliveryActions";
 import { ItemPhotos } from "./ItemPhotos";
+import { AddCustomItem, ItemEditor } from "./ItemEditor";
 import { ITEM_SELECT, getItemPhotoUrls, isCustom, itemName, itemUnit } from "@/lib/deliveryItems";
 
 export default async function DeliveryDetailPage({ params }: { params: { id: string } }) {
@@ -30,6 +31,19 @@ export default async function DeliveryDetailPage({ params }: { params: { id: str
 
   const status = delivery.status as DeliveryStatus;
   const itemPhotoUrls = await getItemPhotoUrls(supabase, delivery.delivery_items_mf ?? []);
+
+  // lines can be edited until the customer has signed (delivered / billed are locked)
+  const canEditItems = role === "admin" && ["confirmed", "prepared", "scheduled"].includes(status);
+  const expectedIds: string[] = (delivery.delivery_items_mf ?? []).flatMap((i: any) => (i.expected_id ? [i.expected_id] : []));
+  const plannedElsewhere = new Map<string, number>();
+  if (canEditItems && expectedIds.length > 0) {
+    const { data: others } = await supabase
+      .from("delivery_items_mf")
+      .select("expected_id, quantity")
+      .in("expected_id", expectedIds)
+      .neq("delivery_id", delivery.id);
+    for (const r of others ?? []) plannedElsewhere.set(r.expected_id, (plannedElsewhere.get(r.expected_id) ?? 0) + r.quantity);
+  }
   const paths: string[] = delivery.signed_doc_paths ?? [];
   const signed = paths.length
     ? (await supabase.storage.from("delivery-docs").createSignedUrls(paths, 3600)).data ?? []
@@ -99,8 +113,25 @@ export default async function DeliveryDetailPage({ params }: { params: { id: str
               })}
               canEdit={role === "admin"}
             />
+            {canEditItems && (
+              <ItemEditor
+                item={{
+                  id: i.id,
+                  quantity: i.quantity,
+                  isCustom: isCustom(i),
+                  name: itemName(i),
+                  unit: itemUnit(i),
+                  customSource: i.custom_source ?? "",
+                  note: i.item_note ?? "",
+                  maxQty: i.expected_id
+                    ? (i.stock_out_expected_mf?.expected_quantity ?? i.quantity) - (plannedElsewhere.get(i.expected_id) ?? 0)
+                    : null,
+                }}
+              />
+            )}
           </div>
         ))}
+        {canEditItems && <AddCustomItem deliveryId={delivery.id} />}
       </Card>
 
       <Card className="space-y-1 text-sm">

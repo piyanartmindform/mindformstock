@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export const ITEM_SELECT =
-  "id, quantity, custom_name, custom_unit, custom_source, item_note, image_paths, products_mf(name, model, unit)";
+  "id, expected_id, quantity, custom_name, custom_unit, custom_source, item_note, image_paths, products_mf(name, model, unit), stock_out_expected_mf(expected_quantity)";
 
 export function itemName(i: any): string {
   return i.products_mf?.name ?? i.custom_name ?? "-";

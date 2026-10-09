@@ -15,6 +15,7 @@ interface Item {
   model: string | null;
   unit: string;
   max: number;
+  closed: boolean;
 }
 
 interface StockLine {
@@ -49,7 +50,7 @@ export function NewDeliveryForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [stock, setStock] = useState<Record<string, StockLine>>(() =>
-    Object.fromEntries(items.map((i) => [i.id, { qty: String(i.max), note: "", files: [] }]))
+    Object.fromEntries(items.map((i) => [i.id, { qty: i.closed ? "0" : String(i.max), note: "", files: [] }]))
   );
   const [custom, setCustom] = useState<CustomLine[]>([]);
 
@@ -160,7 +161,10 @@ export function NewDeliveryForm({
                 <p className="text-sm font-medium text-gray-900 truncate">
                   {i.name}{i.model && <span className="text-gray-500 font-normal"> · {i.model}</span>}
                 </p>
-                <p className="text-xs text-gray-500">เหลือวางแผนได้ {i.max} {i.unit}</p>
+                <p className="text-xs text-gray-500">
+                  เหลือวางแผนได้ {i.max} {i.unit}
+                  {i.closed && " · ปิดรายการแล้ว (ส่งออกครบ)"}
+                </p>
               </div>
               <input
                 type="number"

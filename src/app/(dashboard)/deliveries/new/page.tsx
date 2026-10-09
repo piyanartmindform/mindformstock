@@ -18,9 +18,8 @@ export default async function NewDeliveryPage({
   const supabase = createClient();
   let itemsQuery = supabase
     .from("stock_out_expected_mf")
-    .select("id, product_id, expected_quantity, sold_quantity, products_mf(name, model, unit)")
+    .select("id, product_id, expected_quantity, status, products_mf(name, model, unit)")
     .eq("customer_name", customer)
-    .eq("status", "open")
     .order("created_at", { ascending: true });
   itemsQuery = project ? itemsQuery.eq("project_name", project) : itemsQuery.is("project_name", null);
 
@@ -39,8 +38,8 @@ export default async function NewDeliveryPage({
     for (const r of plannedRows ?? []) planned.set(r.expected_id, (planned.get(r.expected_id) ?? 0) + r.quantity);
   }
 
-  // Already-sold and already-planned quantities overlap once a round is shipped,
-  // so the quantity still available to plan is expected minus whichever is larger.
+  // Stock may already be scanned out (item closed) before the round/document is made,
+  // so closed items stay selectable; only quantity already put in other rounds is excluded.
   const available = (items ?? [])
     .map((i: any) => ({
       id: i.id,
@@ -48,9 +47,11 @@ export default async function NewDeliveryPage({
       name: i.products_mf?.name ?? "-",
       model: i.products_mf?.model ?? null,
       unit: i.products_mf?.unit ?? "",
-      max: i.expected_quantity - Math.max(i.sold_quantity, planned.get(i.id) ?? 0),
+      max: i.expected_quantity - (planned.get(i.id) ?? 0),
+      closed: i.status === "closed",
     }))
-    .filter((i) => i.max > 0);
+    .filter((i) => i.max > 0)
+    .sort((a, b) => Number(a.closed) - Number(b.closed));
 
   return (
     <div className="p-4 max-w-lg mx-auto w-full">
