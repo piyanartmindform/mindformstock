@@ -12,12 +12,44 @@ async function getProducts() {
   return (data ?? []) as any;
 }
 
+async function getExpectedProgress(id?: string) {
+  if (!id) return null;
+  const supabase = createClient();
+  const [{ data: expected }, { data: registeredRows }, { data: stockOutRows }] = await Promise.all([
+    supabase
+      .from("stock_out_expected_mf")
+      .select("id, product_id, customer_name, project_name, sold_quantity")
+      .eq("id", id)
+      .maybeSingle(),
+    supabase
+      .from("qr_codes_mf")
+      .select("id")
+      .eq("status", "registered")
+      .eq("stock_out_expected_id", id),
+    supabase
+      .from("stock_out_mf")
+      .select("id, quantity, sold_date")
+      .eq("stock_out_expected_id", id)
+      .order("sold_date", { ascending: true })
+      .order("created_at", { ascending: true }),
+  ]);
+  if (!expected || expected.sold_quantity <= 0) return null;
+  return {
+    ...expected,
+    registered: registeredRows?.length ?? 0,
+    stockOutBatches: stockOutRows ?? [],
+  };
+}
+
 export default async function RegisterWarrantyPage({
   searchParams,
 }: {
-  searchParams: { product?: string; customer?: string; project?: string };
+  searchParams: { expected?: string; product?: string; customer?: string; project?: string };
 }) {
-  const products = await getProducts();
+  const [products, progress] = await Promise.all([
+    getProducts(),
+    getExpectedProgress(searchParams.expected),
+  ]);
   return (
     <div className="p-4 max-w-lg mx-auto w-full">
       <div className="pt-2 mb-6">
@@ -27,9 +59,13 @@ export default async function RegisterWarrantyPage({
       </div>
       <RegisterForm
         products={products}
-        defaultProductId={searchParams.product}
-        defaultCustomerName={searchParams.customer}
-        defaultProjectName={searchParams.project}
+        defaultProductId={progress?.product_id ?? searchParams.product}
+        defaultCustomerName={progress?.customer_name ?? searchParams.customer}
+        defaultProjectName={progress?.project_name ?? searchParams.project}
+        expectedId={progress?.id}
+        targetQuantity={progress?.sold_quantity}
+        initialRegistered={progress?.registered}
+        stockOutBatches={progress?.stockOutBatches}
       />
     </div>
   );

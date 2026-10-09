@@ -17,25 +17,21 @@ async function getExpected() {
   return data ?? [];
 }
 
-function registeredKey(productId: string, customerName: string, projectName: string | null) {
-  return `${productId}|${customerName}|${projectName ?? ""}`;
-}
-
 async function getRegisteredCounts(items: any[]) {
-  const productIds = Array.from(new Set(items.map((i) => i.product_id).filter(Boolean)));
-  if (productIds.length === 0) return new Map<string, number>();
+  const expectedIds = items.map((i) => i.id).filter(Boolean);
+  if (expectedIds.length === 0) return new Map<string, number>();
 
   const supabase = createClient();
   const { data } = await supabase
     .from("qr_codes_mf")
-    .select("product_id, customer_name, project_name")
+    .select("stock_out_expected_id")
     .eq("status", "registered")
-    .in("product_id", productIds);
+    .in("stock_out_expected_id", expectedIds);
 
   const counts = new Map<string, number>();
   for (const row of data ?? []) {
-    const key = registeredKey(row.product_id, row.customer_name, row.project_name);
-    counts.set(key, (counts.get(key) ?? 0) + 1);
+    if (!row.stock_out_expected_id) continue;
+    counts.set(row.stock_out_expected_id, (counts.get(row.stock_out_expected_id) ?? 0) + 1);
   }
   return counts;
 }
@@ -54,6 +50,7 @@ function groupByCustomer(items: any[]) {
 
 function registerHref(item: any) {
   const params = new URLSearchParams();
+  params.set("expected", item.id);
   if (item.product_id) params.set("product", item.product_id);
   if (item.customer_name) params.set("customer", item.customer_name);
   if (item.project_name) params.set("project", item.project_name);
@@ -63,7 +60,7 @@ function registerHref(item: any) {
 function RegisterStatus({ item, registeredCounts }: { item: any; registeredCounts: Map<string, number> }) {
   const target = item.sold_quantity;
   if (target === 0) return null;
-  const registered = registeredCounts.get(registeredKey(item.product_id, item.customer_name, item.project_name)) ?? 0;
+  const registered = registeredCounts.get(item.id) ?? 0;
 
   if (registered >= target) {
     return (

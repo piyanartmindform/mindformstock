@@ -24,12 +24,30 @@ export function RegisterForm({
   defaultProductId,
   defaultCustomerName,
   defaultProjectName,
+  expectedId,
+  targetQuantity,
+  initialRegistered = 0,
+  stockOutBatches = [],
 }: {
   products: Product[];
   defaultProductId?: string;
   defaultCustomerName?: string;
   defaultProjectName?: string;
+  expectedId?: string;
+  targetQuantity?: number;
+  initialRegistered?: number;
+  stockOutBatches?: { id: string; quantity: number; sold_date: string }[];
 }) {
+  function batchForIndex(index: number) {
+    let offset = index;
+    for (const batch of stockOutBatches) {
+      if (offset < batch.quantity) return batch;
+      offset -= batch.quantity;
+    }
+    return stockOutBatches[stockOutBatches.length - 1];
+  }
+
+  const initialBatch = batchForIndex(initialRegistered);
   const [showScanner, setShowScanner] = useState(false);
   const [code, setCode] = useState("");
   const [selectedProductId, setSelectedProductId] = useState(defaultProductId ?? "");
@@ -37,11 +55,15 @@ export function RegisterForm({
     const p = products.find((x) => x.id === defaultProductId);
     return p ? p.default_warranty_months / 12 : 0;
   });
-  const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split("T")[0]);
+  const [purchaseDate, setPurchaseDate] = useState(initialBatch?.sold_date ?? new Date().toISOString().split("T")[0]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [savedCode, setSavedCode] = useState("");
+  const [registeredCount, setRegisteredCount] = useState(initialRegistered);
+  const isBatch = Boolean(expectedId && targetQuantity);
+  const isComplete = isBatch && registeredCount >= (targetQuantity ?? 0);
+  const currentStockOut = batchForIndex(registeredCount);
 
   // Auto-fill warranty years when product changes
   function handleProductChange(id: string) {
@@ -85,6 +107,8 @@ export function RegisterForm({
       warranty_expires_at: warrantyExpiresAt,
       notes: (fd.get("notes") as string) || null,
       registered_at: new Date().toISOString(),
+      stock_out_expected_id: expectedId ?? null,
+      stock_out_id: currentStockOut?.id ?? null,
     };
 
     // Check if code already exists
@@ -139,6 +163,7 @@ export function RegisterForm({
     }
 
     setSavedCode(trimmedCode);
+    setRegisteredCount((count) => count + 1);
     setSuccess(true);
   }
 
@@ -151,11 +176,29 @@ export function RegisterForm({
     setSuccess(false);
     setLoading(false);
     setCode("");
-    setSelectedProductId("");
-    setWarrantyYears(0);
-    setPurchaseDate(new Date().toISOString().split("T")[0]);
+    if (!isBatch) {
+      setSelectedProductId("");
+      setWarrantyYears(0);
+      setPurchaseDate(new Date().toISOString().split("T")[0]);
+    } else {
+      const nextBatch = batchForIndex(registeredCount);
+      if (nextBatch) setPurchaseDate(nextBatch.sold_date);
+    }
     setError("");
     setSavedCode("");
+  }
+
+  if (isComplete && !success) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-5xl mb-4">✅</p>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">ลงทะเบียนครบแล้ว</h2>
+        <p className="text-gray-500 mb-6">ครบ {registeredCount}/{targetQuantity} ชิ้น</p>
+        <a href="/stock-out/expected" className="inline-flex h-12 px-6 items-center bg-green-600 text-white rounded-xl font-medium text-sm">
+          กลับหน้ารายการ
+        </a>
+      </div>
+    );
   }
 
   if (success) {
@@ -164,12 +207,31 @@ export function RegisterForm({
         <p className="text-5xl mb-4">✅</p>
         <h2 className="text-xl font-bold text-gray-900 mb-2">ลงทะเบียนสำเร็จ</h2>
         <p className="text-gray-500 mb-6">{savedCode} ถูกผูกกับข้อมูลลูกค้าแล้ว</p>
-        <button
-          onClick={resetForm}
-          className="h-12 px-6 bg-brand text-white rounded-xl font-medium text-sm"
-        >
-          ลงทะเบียนรายการถัดไป
-        </button>
+        {isBatch && (
+          <div className="max-w-xs mx-auto mb-6">
+            <p className={`text-lg font-bold ${isComplete ? "text-green-600" : "text-brand"}`}>
+              ลงทะเบียนแล้ว {registeredCount}/{targetQuantity} ชิ้น
+            </p>
+            <div className="h-2 rounded-full bg-gray-200 mt-2 overflow-hidden">
+              <div
+                className={`h-full ${isComplete ? "bg-green-500" : "bg-brand"}`}
+                style={{ width: `${Math.min(100, (registeredCount / (targetQuantity ?? 1)) * 100)}%` }}
+              />
+            </div>
+          </div>
+        )}
+        {isComplete ? (
+          <a href="/stock-out/expected" className="inline-flex h-12 px-6 items-center bg-green-600 text-white rounded-xl font-medium text-sm">
+            ครบแล้ว กลับหน้ารายการ
+          </a>
+        ) : (
+          <button
+            onClick={resetForm}
+            className="h-12 px-6 bg-brand text-white rounded-xl font-medium text-sm"
+          >
+            {isBatch ? `ลงทะเบียนชิ้นที่ ${registeredCount + 1}` : "ลงทะเบียนรายการถัดไป"}
+          </button>
+        )}
       </div>
     );
   }
@@ -181,6 +243,17 @@ export function RegisterForm({
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4 pb-28">
+        {isBatch && (
+          <div className="rounded-xl border border-sky-300 bg-sky-50 px-4 py-3">
+            <div className="flex items-center justify-between gap-3 text-sm">
+              <span className="font-medium text-sky-900">ความคืบหน้างานนี้</span>
+              <span className="font-bold text-sky-900">{registeredCount}/{targetQuantity} ชิ้น</span>
+            </div>
+            <div className="h-2 rounded-full bg-sky-100 mt-2 overflow-hidden">
+              <div className="h-full bg-brand" style={{ width: `${Math.min(100, (registeredCount / (targetQuantity ?? 1)) * 100)}%` }} />
+            </div>
+          </div>
+        )}
         {/* QR Code */}
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-gray-700">รหัส QR สติ๊กเกอร์ *</label>
@@ -207,11 +280,11 @@ export function RegisterForm({
         </div>
 
         {/* Product */}
-        <ProductPicker label="สินค้า" products={products} value={selectedProductId} onChange={handleProductChange} />
+        <ProductPicker label="สินค้า" products={products} value={selectedProductId} onChange={handleProductChange} disabled={isBatch} />
 
         {/* Customer */}
-        <CustomerCombobox label="ชื่อลูกค้า" name="customer_name" defaultValue={defaultCustomerName} required />
-        <Input label="ชื่อโปรเจค" name="project_name" defaultValue={defaultProjectName} placeholder="ชื่อโครงการ (ถ้ามี)" />
+        <CustomerCombobox label="ชื่อลูกค้า" name="customer_name" defaultValue={defaultCustomerName} required readOnly={isBatch} />
+        <Input label="ชื่อโปรเจค" name="project_name" defaultValue={defaultProjectName} placeholder="ชื่อโครงการ (ถ้ามี)" readOnly={isBatch} />
 
         {/* Dates */}
         <div className="flex flex-col gap-1.5">
@@ -220,9 +293,11 @@ export function RegisterForm({
             type="date"
             value={purchaseDate}
             onChange={(e) => setPurchaseDate(e.target.value)}
-            className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand"
+            readOnly={isBatch}
+            className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand read-only:bg-gray-50 read-only:text-gray-600"
             required
           />
+          {isBatch && <p className="text-xs text-gray-500">อ้างอิงจากวันที่บันทึกขายออกของรอบนี้</p>}
         </div>
 
         <div className="flex flex-col gap-1.5">
