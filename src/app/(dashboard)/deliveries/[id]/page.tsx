@@ -15,6 +15,7 @@ import {
 import { DeliveryActions } from "./DeliveryActions";
 import { ItemPhotos } from "./ItemPhotos";
 import { AddCustomItem, ItemEditor } from "./ItemEditor";
+import { AddStockItem, type AvailableItem } from "./AddStockItem";
 import { ITEM_SELECT, getItemPhotoUrls, isCustom, itemName, itemUnit } from "@/lib/deliveryItems";
 
 export default async function DeliveryDetailPage({ params }: { params: { id: string } }) {
@@ -43,6 +44,41 @@ export default async function DeliveryDetailPage({ params }: { params: { id: str
       .in("expected_id", expectedIds)
       .neq("delivery_id", delivery.id);
     for (const r of others ?? []) plannedElsewhere.set(r.expected_id, (plannedElsewhere.get(r.expected_id) ?? 0) + r.quantity);
+  }
+
+  // stock items of the same customer/project that can still be added to this round
+  let availableToAdd: AvailableItem[] = [];
+  if (canEditItems) {
+    let q = supabase
+      .from("stock_out_expected_mf")
+      .select("id, product_id, expected_quantity, status, products_mf(name, model, unit)")
+      .eq("customer_name", delivery.customer_name)
+      .order("created_at", { ascending: true });
+    q = delivery.project_name ? q.eq("project_name", delivery.project_name) : q.is("project_name", null);
+    const { data: candidates } = await q;
+    const inThisRound = new Set(expectedIds);
+    const candidateIds = (candidates ?? []).map((c: any) => c.id).filter((id: string) => !inThisRound.has(id));
+    const plannedAll = new Map<string, number>();
+    if (candidateIds.length > 0) {
+      const { data: plannedRows } = await supabase
+        .from("delivery_items_mf")
+        .select("expected_id, quantity")
+        .in("expected_id", candidateIds);
+      for (const r of plannedRows ?? []) plannedAll.set(r.expected_id, (plannedAll.get(r.expected_id) ?? 0) + r.quantity);
+    }
+    availableToAdd = (candidates ?? [])
+      .filter((c: any) => !inThisRound.has(c.id))
+      .map((c: any) => ({
+        expectedId: c.id,
+        productId: c.product_id,
+        name: c.products_mf?.name ?? "-",
+        model: c.products_mf?.model ?? null,
+        unit: c.products_mf?.unit ?? "",
+        max: c.expected_quantity - (plannedAll.get(c.id) ?? 0),
+        closed: c.status === "closed",
+      }))
+      .filter((a: AvailableItem) => a.max > 0)
+      .sort((a: AvailableItem, b: AvailableItem) => Number(a.closed) - Number(b.closed));
   }
   const paths: string[] = delivery.signed_doc_paths ?? [];
   const signed = paths.length
@@ -131,6 +167,7 @@ export default async function DeliveryDetailPage({ params }: { params: { id: str
             )}
           </div>
         ))}
+        {canEditItems && <AddStockItem deliveryId={delivery.id} available={availableToAdd} />}
         {canEditItems && <AddCustomItem deliveryId={delivery.id} />}
       </Card>
 
