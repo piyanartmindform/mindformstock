@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { formatDate, isWarrantyActive } from "@/lib/utils";
@@ -15,6 +16,8 @@ interface Item {
   warranty_expires_at?: string | null;
   products_mf?: { name: string; model: string | null } | null;
 }
+
+const QrScanner = dynamic(() => import("@/components/ui/QrScanner").then((mod) => mod.QrScanner), { ssr: false });
 
 type ViewMode = "customer" | "product" | "recent";
 
@@ -48,6 +51,7 @@ const byThai = (a: [string, unknown], b: [string, unknown]) => a[0].localeCompar
 export function WarrantyList({ items }: { items: Item[] }) {
   const [query, setQuery] = useState("");
   const [view, setView] = useState<ViewMode>("recent");
+  const [showScanner, setShowScanner] = useState(false);
 
   const q = query.trim().toLowerCase();
   const filtered = q
@@ -64,20 +68,43 @@ export function WarrantyList({ items }: { items: Item[] }) {
   return (
     <div className="space-y-3">
       {/* Search */}
-      <div className="relative">
-        <svg
-          className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"
-          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+      <div className="flex gap-2">
+        <div className="relative flex-1 min-w-0">
+          <svg
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+          </svg>
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="ค้นหา รหัส QR / ชื่อลูกค้า / สินค้า..."
+            className="w-full rounded-xl border border-gray-300 bg-white pl-10 pr-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowScanner(true)}
+          aria-label="สแกน QR เพื่อค้นหา"
+          className="h-[50px] px-3 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium flex items-center gap-1.5 shrink-0 active:bg-gray-200"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-        </svg>
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="ค้นหา รหัส QR / ชื่อลูกค้า / สินค้า..."
-          className="w-full rounded-xl border border-gray-300 bg-white pl-10 pr-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand"
-        />
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
+          </svg>
+          สแกน
+        </button>
       </div>
+
+      {showScanner && (
+        <QrScanner
+          onScan={(code) => {
+            setQuery(code);
+            setShowScanner(false);
+          }}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
 
       {/* View mode tabs */}
       <div className="grid grid-cols-3 gap-2">

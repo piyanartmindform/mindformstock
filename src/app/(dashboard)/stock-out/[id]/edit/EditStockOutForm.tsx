@@ -42,6 +42,25 @@ export function EditStockOutForm({ item }: { item: any }) {
       return;
     }
 
+    // names are copied into several tables; rename the whole customer + project pair together
+    const newCustomer = (fd.get("customer_name") as string).trim();
+    const newProject = ((fd.get("project_name") as string) || "").trim();
+    const namesChanged =
+      newCustomer !== (item.customer_name ?? "") || newProject !== (item.project_name ?? "");
+    if (namesChanged && fd.get("propagate")) {
+      const { error: renameError } = await supabase.rpc("rename_customer_project", {
+        p_old_customer: item.customer_name,
+        p_old_project: item.project_name ?? "",
+        p_new_customer: newCustomer,
+        p_new_project: newProject,
+      });
+      if (renameError) {
+        setError(`บันทึกรายการนี้แล้ว แต่เปลี่ยนชื่อที่อื่นไม่สำเร็จ: ${renameError.message}`);
+        setLoading(false);
+        return;
+      }
+    }
+
     // Adjust stock if quantity changed
     if (diff !== 0) {
       if (diff > 0) {
@@ -92,6 +111,13 @@ export function EditStockOutForm({ item }: { item: any }) {
         defaultValue={item.project_name ?? ""}
         placeholder="ชื่อโครงการ (ถ้ามี)"
       />
+      <label className="flex items-start gap-3 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
+        <input type="checkbox" name="propagate" defaultChecked className="mt-0.5 h-5 w-5 shrink-0" />
+        <span>
+          ถ้าแก้ชื่อลูกค้า/โปรเจค ให้เปลี่ยนที่อื่นที่เชื่อมโยงด้วย (รายการที่รอส่งออก รายการขายอื่น การลงทะเบียนประกัน
+          และรอบส่ง ของลูกค้า+โปรเจคเดิมนี้) เอาติ๊กออกถ้าจะแก้เฉพาะรายการนี้
+        </span>
+      </label>
       <Input
         label="ราคา (บาท)"
         name="price"

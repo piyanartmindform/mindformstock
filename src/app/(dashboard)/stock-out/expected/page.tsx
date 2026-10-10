@@ -6,6 +6,7 @@ import Image from "next/image";
 import { formatDate } from "@/lib/utils";
 import { getCurrentUserRole } from "@/lib/auth";
 import { DeleteExpectedButton } from "./DeleteExpectedButton";
+import { registerHref } from "@/lib/warrantyRegister";
 
 async function getExpected() {
   const supabase = createClient();
@@ -68,15 +69,6 @@ function groupByCustomer(items: any[]) {
     groups.get(key)!.items.push(item);
   }
   return Array.from(groups.values());
-}
-
-function registerHref(item: any) {
-  const params = new URLSearchParams();
-  params.set("expected", item.id);
-  if (item.product_id) params.set("product", item.product_id);
-  if (item.customer_name) params.set("customer", item.customer_name);
-  if (item.project_name) params.set("project", item.project_name);
-  return `/warranty/register?${params.toString()}`;
 }
 
 function RegisterStatus({ item, registeredCounts }: { item: any; registeredCounts: Map<string, number> }) {
