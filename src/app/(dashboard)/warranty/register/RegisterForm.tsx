@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { CustomerCombobox } from "@/components/ui/CustomerCombobox";
 import { ProductPicker } from "@/components/ui/ProductPicker";
+import { AlertDialog, type AlertInfo } from "@/components/ui/AlertDialog";
+import { formatDate } from "@/lib/utils";
 
 const QrScanner = dynamic(() => import("@/components/ui/QrScanner").then((mod) => mod.QrScanner), { ssr: false });
 
@@ -18,6 +20,34 @@ interface Product {
   image_urls?: string[];
   categories_mf?: { name: string; sort_order: number } | null;
 }
+
+// what to tell the user when a scanned / typed code cannot be registered; null = code is free to use
+function describeExistingCode(code: string, existing: any): AlertInfo | null {
+  if (existing?.status === "registered") {
+    const product = Array.isArray(existing.products_mf) ? existing.products_mf[0] : existing.products_mf;
+    const details = [
+      existing.customer_name && `ลูกค้า: ${existing.customer_name}${existing.project_name ? ` · ${existing.project_name}` : ""}`,
+      product?.name && `สินค้า: ${product.name}`,
+      existing.registered_at && `ลงทะเบียนเมื่อ ${formatDate(existing.registered_at)}`,
+    ].filter(Boolean) as string[];
+    return { title: "รหัสนี้ลงทะเบียนไปแล้ว", message: `รหัส ${code} ถูกลงทะเบียนไว้แล้ว ไม่สามารถลงซ้ำได้`, details };
+  }
+  if (existing?.status === "in_stock") {
+    return {
+      title: "รหัสนี้อยู่ในสต็อก",
+      message: `รหัส ${code} เป็นสินค้าที่อยู่ในสต็อกแล้ว กรุณาใช้หน้า "ขายออก" เพื่อสแกนออกแทน จะได้ตัดสต็อกให้ถูกต้อง`,
+    };
+  }
+  if (existing?.status === "sold") {
+    return {
+      title: "รหัสนี้ใช้ตัดสต็อกไปแล้ว",
+      message: `รหัส ${code} เป็นบาร์โค้ดกล่องที่ใช้ตัดสต็อกไปแล้ว กรุณาใช้ QR สติ๊กเกอร์ใหม่สำหรับติดตั้งหน้างานแทน`,
+    };
+  }
+  return null;
+}
+
+const CODE_SELECT = "id, status, customer_name, project_name, registered_at, products_mf(name)";
 
 export function RegisterForm({
   products,
@@ -58,6 +88,7 @@ export function RegisterForm({
   const [purchaseDate, setPurchaseDate] = useState(initialBatch?.sold_date ?? new Date().toISOString().split("T")[0]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [alertInfo, setAlertInfo] = useState<AlertInfo | null>(null);
   const [success, setSuccess] = useState(false);
   const [savedCode, setSavedCode] = useState("");
   const [registeredCount, setRegisteredCount] = useState(initialRegistered);
@@ -114,22 +145,13 @@ export function RegisterForm({
     // Check if code already exists
     const { data: existing } = await supabase
       .from("qr_codes_mf")
-      .select("id, status")
+      .select(CODE_SELECT)
       .eq("code", trimmedCode)
-      .single();
+      .maybeSingle();
 
-    if (existing?.status === "registered") {
-      setError(`รหัส ${trimmedCode} ถูกลงทะเบียนไปแล้ว`);
-      setLoading(false);
-      return;
-    }
-    if (existing?.status === "in_stock") {
-      setError(`รหัส ${trimmedCode} เป็นสินค้าที่อยู่ในสต็อกแล้ว กรุณาใช้หน้า "ขายออก" เพื่อสแกนออกแทน จะได้ตัดสต็อกให้ถูกต้อง`);
-      setLoading(false);
-      return;
-    }
-    if (existing?.status === "sold") {
-      setError(`รหัส ${trimmedCode} เป็นบาร์โค้ดกล่องที่ใช้ตัดสต็อกไปแล้ว กรุณาใช้ QR สติ๊กเกอร์ใหม่สำหรับติดตั้งหน้างานแทน`);
+    const blocked = describeExistingCode(trimmedCode, existing);
+    if (blocked) {
+      setAlertInfo(blocked);
       setLoading(false);
       return;
     }
@@ -167,9 +189,22 @@ export function RegisterForm({
     setSuccess(true);
   }
 
-  function handleScan(scannedCode: string) {
+  async function handleScan(scannedCode: string) {
     setShowScanner(false);
-    setCode(scannedCode);
+    const scanned = scannedCode.trim().toUpperCase();
+    // warn right away, before the user fills in the rest of the form
+    const { data: existing } = await createClient()
+      .from("qr_codes_mf")
+      .select(CODE_SELECT)
+      .eq("code", scanned)
+      .maybeSingle();
+    const blocked = describeExistingCode(scanned, existing);
+    if (blocked) {
+      setCode("");
+      setAlertInfo(blocked);
+      return;
+    }
+    setCode(scanned);
   }
 
   function resetForm() {
@@ -241,6 +276,7 @@ export function RegisterForm({
       {showScanner && (
         <QrScanner onScan={handleScan} onClose={() => setShowScanner(false)} />
       )}
+      <AlertDialog alert={alertInfo} onClose={() => setAlertInfo(null)} />
 
       <form onSubmit={handleSubmit} className="space-y-4 pb-28">
         {isBatch && (

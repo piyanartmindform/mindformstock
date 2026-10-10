@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { qrStatusLabel } from "@/lib/utils";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { CustomerCombobox } from "@/components/ui/CustomerCombobox";
@@ -70,7 +71,7 @@ export function StockOutForm({
       .maybeSingle();
     if (error) return error.message;
     if (!data) return `ไม่พบรหัส ${code} ในระบบ`;
-    if (data.status !== "in_stock") return `รหัส ${code} ไม่ได้อยู่ในสต็อก (สถานะ: ${data.status})`;
+    if (data.status !== "in_stock") return `รหัส ${code} ไม่ได้อยู่ในสต็อก (${qrStatusLabel(data.status)})`;
     if (data.product_id !== selectedProductId) return `รหัส ${code} เป็นของสินค้าอื่น`;
     return undefined;
   }

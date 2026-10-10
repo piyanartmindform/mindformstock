@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import { AlertDialog, type AlertInfo } from "@/components/ui/AlertDialog";
 
 const QrScanner = dynamic(() => import("@/components/ui/QrScanner").then((mod) => mod.QrScanner), { ssr: false });
 
@@ -15,7 +16,7 @@ interface QrCodeListInputProps {
 
 export function QrCodeListInput({ label, codes, onChange, validate }: QrCodeListInputProps) {
   const [manualCode, setManualCode] = useState("");
-  const [error, setError] = useState("");
+  const [alertInfo, setAlertInfo] = useState<AlertInfo | null>(null);
   const [checking, setChecking] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -24,15 +25,16 @@ export function QrCodeListInput({ label, codes, onChange, validate }: QrCodeList
     const code = raw.trim().toUpperCase();
     if (!code) return;
     if (codes.includes(code)) {
-      setError(`${code} ถูกสแกนไปแล้ว`);
+      setManualCode("");
+      setAlertInfo({ title: "สแกนซ้ำ", message: `${code} ถูกสแกนไปแล้วในรายการนี้` });
       return;
     }
     setChecking(true);
-    setError("");
     const validationError = await validate(code);
     setChecking(false);
     if (validationError) {
-      setError(validationError);
+      setManualCode("");
+      setAlertInfo({ title: "ใช้รหัสนี้ไม่ได้", message: validationError });
       return;
     }
     onChange([...codes, code]);
@@ -84,7 +86,6 @@ export function QrCodeListInput({ label, codes, onChange, validate }: QrCodeList
       </div>
 
       {checking && <p className="text-xs text-gray-400">กำลังตรวจสอบ...</p>}
-      {error && <p className="text-xs text-red-500">{error}</p>}
 
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-500">
@@ -116,6 +117,14 @@ export function QrCodeListInput({ label, codes, onChange, validate }: QrCodeList
       {showScanner && (
         <QrScanner onScan={handleScan} onClose={() => setShowScanner(false)} />
       )}
+
+      <AlertDialog
+        alert={alertInfo}
+        onClose={() => {
+          setAlertInfo(null);
+          inputRef.current?.focus();
+        }}
+      />
     </div>
   );
 }

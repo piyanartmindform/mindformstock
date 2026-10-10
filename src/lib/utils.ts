@@ -135,3 +135,14 @@ export function groupProductsByCategory<T extends { categories_mf?: { name: stri
     })
     .map(([category, { items }]) => ({ category, items }));
 }
+
+// Thai wording for qr_codes_mf.status, for messages shown to staff
+export function qrStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    unused: "ยังไม่ได้ใช้",
+    in_stock: "อยู่ในสต็อก",
+    sold: "ตัดสต็อกไปแล้ว",
+    registered: "ลงทะเบียนประกันแล้ว",
+  };
+  return labels[status] ?? status;
+}

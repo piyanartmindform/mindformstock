@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { qrStatusLabel } from "@/lib/utils";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { QrCodeListInput } from "@/components/ui/QrCodeListInput";
@@ -66,7 +67,7 @@ export function StockInForm({
       .maybeSingle();
     if (error) return error.message;
     if (!data) return `ไม่พบรหัส ${code} ในระบบ`;
-    if (data.status !== "unused") return `รหัส ${code} ถูกใช้ไปแล้ว (สถานะ: ${data.status})`;
+    if (data.status !== "unused") return `รหัส ${code} ถูกใช้ไปแล้ว (${qrStatusLabel(data.status)})`;
     return undefined;
   }
 
