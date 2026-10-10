@@ -27,11 +27,21 @@ set stock_out_expected_id = m.expected_id
 from unique_matches m
 where q.id = m.qr_id;
 
--- 2) OPTIONAL - align the 2 early registrations with the stock-out date (2026-10-10).
---    Only run this if the warranty really starts on the stock-out date.
+-- 2) Align the 2 early registrations with the stock-out date (2026-10-10).
+--    NOT run from this file: applied to prod on 2026-10-10 as a single guarded UPDATE
+--    (via the CLI) after the user confirmed the warranty starts on the stock-out date.
+--    Result: all 92 Jpark registrations now have purchase_date 2026-10-10 and
+--    warranty_expires_at 2031-10-10. Kept here (commented out) as the record of that change.
 -- update qr_codes_mf
 -- set purchase_date = '2026-10-10',
 --     warranty_expires_at = '2031-10-10'
 -- where code in ('MF-26732', 'MF-26740')
 --   and status = 'registered'
---   and purchase_date = '2026-10-09';
+--   and purchase_date = '2026-10-09'
+--   and customer_name ilike '%ดีซายน์%'
+--   and project_name = 'Jpark ศรีราชา';
+
+-- 3) Also applied directly on 2026-10-10 (one row, guarded by status = 'unused'):
+--    MF-26737 had been stuck on a unit but never registered, so it was registered with the
+--    same values as MF-26738 (product, customer, project, dates, expected + stock-out links).
+--    After that Jpark ECO ll - HT-4202 shows 92/92 registered and linked.
