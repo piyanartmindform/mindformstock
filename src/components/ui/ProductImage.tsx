@@ -19,7 +19,7 @@ export function ProductImage({ images, alt, compact = false }: { images: string[
             width={280}
             height={160}
             onClick={() => setOpenIndex(i)}
-            className={`${compact ? "h-32 max-w-[55vw] rounded-xl" : "h-40 max-w-[70vw] rounded-2xl"} w-auto object-contain cursor-zoom-in shrink-0 bg-gray-50`}
+            className={`${compact ? "h-24 max-w-[45vw] rounded-lg" : "h-40 max-w-[70vw] rounded-2xl"} w-auto object-contain cursor-zoom-in shrink-0 bg-gray-50`}
           />
         ))}
       </div>
