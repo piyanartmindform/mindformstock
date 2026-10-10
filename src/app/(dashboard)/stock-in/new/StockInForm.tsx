@@ -123,6 +123,15 @@ export function StockInForm({
       await supabase.rpc("increment_expected_received", { p_id: expected.id, amount: quantity });
     }
 
+    // opened from the pending list: go back to it once this item is complete so the
+    // next item can be picked right away
+    const completesExpected = !!expected && expected.received_quantity + quantity >= expected.expected_quantity;
+    if (isSerialized && expected && completesExpected) {
+      router.push("/stock-in/expected");
+      router.refresh();
+      return;
+    }
+
     if (isSerialized) {
       // ทำงานต่อเนื่อง: อยู่หน้าเดิม คงสินค้า/วันที่ไว้ เคลียร์แค่รายการที่สแกน
       // เพื่อสแกนล็อตถัดไปของสินค้าเดียวกันได้ทันที ถ้าจะเปลี่ยนสินค้าค่อยเลือกใหม่เอง
@@ -133,7 +142,7 @@ export function StockInForm({
       return;
     }
 
-    router.push("/stock-in");
+    router.push(expected ? "/stock-in/expected" : "/stock-in");
     router.refresh();
   }
 
