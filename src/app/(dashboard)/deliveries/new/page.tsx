@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUserRole } from "@/lib/auth";
+import Link from "next/link";
 import { NewDeliveryForm } from "./NewDeliveryForm";
 
 export default async function NewDeliveryPage({
@@ -27,6 +28,14 @@ export default async function NewDeliveryPage({
     itemsQuery,
     supabase.from("customers_mf").select("address").eq("name", customer).maybeSingle(),
   ]);
+
+  let roundsQuery = supabase
+    .from("deliveries_mf")
+    .select("id, doc_no, status")
+    .eq("customer_name", customer)
+    .order("created_at", { ascending: false });
+  roundsQuery = project ? roundsQuery.eq("project_name", project) : roundsQuery.is("project_name", null);
+  const { data: existingRounds } = await roundsQuery;
 
   const expectedIds = (items ?? []).map((i: any) => i.id);
   const planned = new Map<string, number>();
@@ -63,6 +72,26 @@ export default async function NewDeliveryPage({
           {customer}{project ? ` · ${project}` : ""}
         </p>
       </div>
+      {(existingRounds ?? []).length > 0 && (
+        <div className="mb-4 rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900">
+          <p className="font-medium">
+            {available.length === 0
+              ? "สินค้าทุกรายการอยู่ในรอบส่งแล้ว ไม่ต้องสร้างซ้ำ แก้ไขหรือเพิ่มรายการได้ในรอบที่มีอยู่"
+              : "ลูกค้า/โปรเจคนี้มีรอบส่งอยู่แล้ว ถ้าต้องการเพิ่มสินค้า ให้เพิ่มในรอบเดิมแทนการสร้างใหม่"}
+          </p>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {(existingRounds ?? []).map((r: any) => (
+              <Link
+                key={r.id}
+                href={`/deliveries/${r.id}`}
+                className="inline-flex items-center h-8 px-2.5 rounded-lg border border-sky-300 bg-white text-xs font-medium text-sky-800 active:bg-sky-100"
+              >
+                🚚 {r.doc_no}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
       <NewDeliveryForm
         customer={customer}
         project={project}

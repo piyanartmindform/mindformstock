@@ -36,6 +36,28 @@ async function getRegisteredCounts(items: any[]) {
   return counts;
 }
 
+type Planned = Map<string, { qty: number; rounds: { id: string; docNo: string; qty: number }[] }>;
+
+// how much of each expected item is already in a delivery round, and which rounds
+async function getPlanned(items: any[]): Promise<Planned> {
+  const ids = items.map((i) => i.id).filter(Boolean);
+  const planned: Planned = new Map();
+  if (ids.length === 0) return planned;
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("delivery_items_mf")
+    .select("expected_id, quantity, deliveries_mf(id, doc_no)")
+    .in("expected_id", ids);
+  for (const row of (data ?? []) as any[]) {
+    if (!row.expected_id || !row.deliveries_mf) continue;
+    const entry = planned.get(row.expected_id) ?? { qty: 0, rounds: [] };
+    entry.qty += row.quantity;
+    entry.rounds.push({ id: row.deliveries_mf.id, docNo: row.deliveries_mf.doc_no, qty: row.quantity });
+    planned.set(row.expected_id, entry);
+  }
+  return planned;
+}
+
 function groupByCustomer(items: any[]) {
   const groups = new Map<string, { customer: string; project: string | null; items: any[] }>();
   for (const item of items) {
@@ -80,9 +102,48 @@ function RegisterStatus({ item, registeredCounts }: { item: any; registeredCount
   );
 }
 
+const chip =
+  "inline-flex items-center h-7 px-2 rounded-lg border border-sky-300 bg-sky-50 text-xs font-medium text-sky-800 active:bg-sky-100";
+
+function RoundChips({ item, planned }: { item: any; planned: Planned }) {
+  const rounds = planned.get(item.id)?.rounds ?? [];
+  if (rounds.length === 0) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-2 mt-3">
+      {rounds.map((r) => (
+        <Link key={r.id} href={`/deliveries/${r.id}`} className={chip}>
+          🚚 {r.docNo} · {r.qty} {item.products_mf?.unit ?? "ชิ้น"}
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+// create-round button only while something in the group is not in a round yet
+function CreateRoundLink({ group, planned }: { group: { customer: string; project: string | null; items: any[] }; planned: Planned }) {
+  const left = group.items.reduce(
+    (n: number, i: any) => n + Math.max(0, i.expected_quantity - (planned.get(i.id)?.qty ?? 0)),
+    0
+  );
+  if (left <= 0) {
+    return <span className="text-xs text-gray-500 shrink-0">มีรอบส่งครบแล้ว</span>;
+  }
+  return (
+    <Link
+      href={`/deliveries/new?${new URLSearchParams({
+        customer: group.customer,
+        ...(group.project ? { project: group.project } : {}),
+      }).toString()}`}
+      className="inline-flex items-center justify-center h-8 px-2.5 rounded-lg border text-xs font-medium border-sky-300 bg-sky-50 text-sky-800 active:bg-sky-100"
+    >
+      🚚 สร้างรอบส่ง
+    </Link>
+  );
+}
+
 export default async function ExpectedStockOutPage() {
   const [items, role] = await Promise.all([getExpected(), getCurrentUserRole()]);
-  const registeredCounts = await getRegisteredCounts(items);
+  const [registeredCounts, planned] = await Promise.all([getRegisteredCounts(items), getPlanned(items)]);
   const open = items.filter((i: any) => i.status === "open");
   const closed = items.filter((i: any) => i.status === "closed");
   const openGroups = groupByCustomer(open);
@@ -130,15 +191,7 @@ export default async function ExpectedStockOutPage() {
                   >
                     + เพิ่มสินค้า
                   </Link>
-                  <Link
-                    href={`/deliveries/new?${new URLSearchParams({
-                      customer: group.customer,
-                      ...(group.project ? { project: group.project } : {}),
-                    }).toString()}`}
-                    className="inline-flex items-center justify-center h-8 px-2.5 rounded-lg border text-xs font-medium border-sky-300 bg-sky-50 text-sky-800 active:bg-sky-100"
-                  >
-                    🚚 สร้างรอบส่ง
-                  </Link>
+                  <CreateRoundLink group={group} planned={planned} />
                   </div>
                 )}
               </div>
@@ -173,6 +226,7 @@ export default async function ExpectedStockOutPage() {
                             </div>
                           </div>
                         </Link>
+                        <RoundChips item={item} planned={planned} />
                         <div className="flex flex-wrap items-center justify-end gap-2 mt-3 pt-3 border-t border-gray-200">
                           <Link
                             href={`/stock-out/expected/print?${new URLSearchParams({
@@ -211,15 +265,7 @@ export default async function ExpectedStockOutPage() {
                         {group.customer}{group.project ? ` · ${group.project}` : ""}
                       </h3>
                       {role === "admin" && (
-                        <Link
-                          href={`/deliveries/new?${new URLSearchParams({
-                            customer: group.customer,
-                            ...(group.project ? { project: group.project } : {}),
-                          }).toString()}`}
-                          className="inline-flex items-center justify-center h-8 px-2.5 rounded-lg border text-xs font-medium border-sky-300 bg-sky-50 text-sky-800 active:bg-sky-100 shrink-0"
-                        >
-                          🚚 สร้างรอบส่ง
-                        </Link>
+                        <CreateRoundLink group={group} planned={planned} />
                       )}
                     </div>
                     <div className="space-y-2">
@@ -240,6 +286,7 @@ export default async function ExpectedStockOutPage() {
                                 {item.sold_quantity >= item.expected_quantity ? "ครบ" : "บางส่วน"}
                               </Badge>
                             </div>
+                            <RoundChips item={item} planned={planned} />
                             {item.sold_quantity > 0 && (
                             <div className="mt-3 pt-3 border-t border-gray-200">
                               <RegisterStatus item={item} registeredCounts={registeredCounts} />
