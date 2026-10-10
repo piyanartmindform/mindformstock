@@ -57,7 +57,7 @@ async function getQRCode(code: string) {
   const supabase = createClient();
   const { data } = await supabase
     .from("qr_codes_mf")
-    .select("*, products_mf(name, model, brand, description)")
+    .select("*, products_mf(name, model, brand)")
     .eq("code", code.toUpperCase())
     .single();
   return data;
@@ -225,9 +225,6 @@ export default async function PublicWarrantyPage({
                 <span className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700">{copy.model} {item.products_mf.model}</span>
               )}
             </div>
-            {item.products_mf.description && (
-              <p className="mt-3 border-t border-gray-100 pt-3 text-sm leading-6 text-gray-600">{item.products_mf.description}</p>
-            )}
           </section>
         )}
 
