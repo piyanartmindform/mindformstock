@@ -3,14 +3,14 @@
 import { useState } from "react";
 import Image from "next/image";
 
-export function ProductImage({ images, alt }: { images: string[]; alt: string }) {
+export function ProductImage({ images, alt, compact = false }: { images: string[]; alt: string; compact?: boolean }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   if (!images || images.length === 0) return null;
 
   return (
     <>
-      <div className="flex gap-2 mb-4 overflow-x-auto">
+      <div className={`flex gap-2 overflow-x-auto ${compact ? "mb-3" : "mb-4"}`}>
         {images.map((src, i) => (
           <Image
             key={i}
@@ -19,7 +19,7 @@ export function ProductImage({ images, alt }: { images: string[]; alt: string })
             width={280}
             height={160}
             onClick={() => setOpenIndex(i)}
-            className="h-40 w-auto max-w-[70vw] rounded-2xl object-contain cursor-zoom-in shrink-0 bg-gray-50"
+            className={`${compact ? "h-32 max-w-[55vw] rounded-xl" : "h-40 max-w-[70vw] rounded-2xl"} w-auto object-contain cursor-zoom-in shrink-0 bg-gray-50`}
           />
         ))}
       </div>
