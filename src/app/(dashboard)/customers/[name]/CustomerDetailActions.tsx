@@ -74,13 +74,18 @@ export function CustomerDetailActions({ customerName, warrantyCount, stockOutCou
       return;
     }
 
-    // ชื่อลูกค้าถูกเก็บเป็น text ซ้ำใน stock_out_mf / qr_codes_mf ด้วย ต้องอัปเดตให้ตรงกัน
-    // ไม่งั้นประวัติการขาย/ประกันเดิมจะเชื่อมกับลูกค้าคนนี้ไม่ได้อีก
+    // ชื่อลูกค้าถูกเก็บเป็น text ซ้ำในหลายตาราง (รายการที่รอส่งออก รายการขาย ประกัน รอบส่ง)
+    // ต้องอัปเดตให้ตรงกันในครั้งเดียว ไม่งั้นประวัติเดิมจะเชื่อมกับลูกค้าคนนี้ไม่ได้อีก
     if (trimmedName !== customerName) {
-      await Promise.all([
-        supabase.from("stock_out_mf").update({ customer_name: trimmedName }).eq("customer_name", customerName),
-        supabase.from("qr_codes_mf").update({ customer_name: trimmedName }).eq("customer_name", customerName),
-      ]);
+      const { error: renameError } = await supabase.rpc("rename_customer_references", {
+        p_old: customerName,
+        p_new: trimmedName,
+      });
+      if (renameError) {
+        setSaving(false);
+        setError(`บันทึกข้อมูลลูกค้าแล้ว แต่เปลี่ยนชื่อในรายการอื่นไม่สำเร็จ: ${renameError.message}`);
+        return;
+      }
     }
 
     setSaving(false);
