@@ -128,11 +128,28 @@ export function RegisterForm({
       warrantyExpiresAt = d.toISOString();
     }
 
+    // when registering against a stock-out order, take customer / project from the order itself
+    // right now: this form stays open between units, so its fields can be stale if the order
+    // was renamed meanwhile
+    let customerName = fd.get("customer_name") as string;
+    let projectName = (fd.get("project_name") as string) || null;
+    if (expectedId) {
+      const { data: order } = await supabase
+        .from("stock_out_expected_mf")
+        .select("customer_name, project_name")
+        .eq("id", expectedId)
+        .maybeSingle();
+      if (order) {
+        customerName = order.customer_name;
+        projectName = order.project_name;
+      }
+    }
+
     const payload = {
       status: "registered",
       product_id: selectedProductId || null,
-      customer_name: fd.get("customer_name") as string,
-      project_name: (fd.get("project_name") as string) || null,
+      customer_name: customerName,
+      project_name: projectName,
       purchase_date: purchaseDate,
       warranty_months: warrantyMonths,
       warranty_expires_at: warrantyExpiresAt,
