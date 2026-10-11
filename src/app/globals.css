@@ -9,6 +9,13 @@
   body {
     @apply bg-gray-50 text-gray-900;
   }
+  input[type="date"] {
+    min-width: 0;
+    max-width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+    text-align: left;
+  }
 }
 
 @layer utilities {
