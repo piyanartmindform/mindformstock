@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthUser } from "@/lib/auth";
-import { PrintButton } from "@/components/ui/PrintButton";
+import { PdfDownloadButton } from "@/components/ui/PdfDownloadButton";
 import { DocumentHeader } from "@/components/ui/DocumentHeader";
 import { SignatureBlock } from "@/components/ui/SignatureBlock";
 import { docLang, docText, formatDocDate, unitLabel } from "@/lib/docI18n";
@@ -67,9 +67,9 @@ export default async function PrintDeliveryPage({
   const toggle = "inline-flex items-center justify-center h-9 min-w-10 px-2.5 rounded-md text-sm font-semibold";
 
   return (
-    <div className="min-h-screen bg-gray-50 print:bg-white">
-      <div className="no-print sticky top-14 md:top-0 z-10 bg-gray-50 border-b border-gray-200 p-4 flex items-center justify-between gap-3">
-        <Link href={`/deliveries/${delivery.id}`} className="text-sm text-brand">{t.back}</Link>
+    <div className="min-h-screen bg-slate-100 print:bg-white">
+      <div className="no-print sticky top-14 md:top-0 z-10 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur flex items-center justify-between gap-3">
+        <Link href={`/deliveries/${delivery.id}`} className="text-sm font-medium text-brand">{t.back}</Link>
         <div className="flex items-center gap-2">
           <div className="flex rounded-lg border border-gray-300 bg-white p-0.5" aria-label="Language">
             <Link href={langLink("th")} className={`${toggle} ${lang === "th" ? "bg-brand text-white" : "text-gray-700"}`}>
@@ -79,11 +79,25 @@ export default async function PrintDeliveryPage({
               EN
             </Link>
           </div>
-          <PrintButton label={isNote ? t.printNote : t.printPick} />
+          <PdfDownloadButton
+            targetId="print-area"
+            fileName={`${delivery.doc_no}_${isNote ? "delivery-note" : "picking-list"}${lang === "en" ? "-EN" : ""}.pdf`}
+            labels={{
+              open: t.pdf,
+              busy: t.pdfBusy,
+              error: t.pdfError,
+              title: t.pdfTitle,
+              download: t.pdfDownload,
+              close: t.pdfClose,
+            }}
+          />
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto p-6 print:p-0 bg-white print:bg-white">
+      <div
+        id="print-area"
+        className="mx-auto my-0 min-h-screen max-w-[210mm] bg-white px-5 py-7 text-[13px] leading-normal shadow-none sm:my-6 sm:min-h-0 sm:px-10 sm:py-9 sm:shadow-lg print:m-0 print:min-h-0 print:max-w-none print:p-0 print:shadow-none"
+      >
         <DocumentHeader
           title={isNote ? t.noteTitle : t.pickTitle}
           docNo={delivery.doc_no}
@@ -91,48 +105,54 @@ export default async function PrintDeliveryPage({
           lang={lang}
         />
 
-        <div className="border border-gray-300 rounded-lg p-4 text-sm mb-4 space-y-1">
-          <p className="text-gray-500 text-xs">{t.customer}</p>
-          <p className="text-gray-900 font-bold">{delivery.customer_name}</p>
-          {customer?.address && <p className="text-gray-700">{customer.address}</p>}
-          {customer?.tax_id && (
-            <p className="text-gray-700">
-              {t.taxId} {customer.tax_id}
-            </p>
-          )}
-          {(customer?.contact_person || customer?.phone) && (
-            <p className="text-gray-700">
-              {t.contact} {[customer.contact_person, customer.phone].filter(Boolean).join(" · ")}
-            </p>
-          )}
-          <p className="text-gray-700 pt-1">
-            {t.project} <span className="font-medium text-gray-900">{delivery.project_name ?? "-"}</span>
-          </p>
+        <div data-pdf-block className="relative mb-4 overflow-hidden rounded-xl border border-brand-200 bg-brand-50/50 p-4 pl-5 text-[13px]">
+          <div className="absolute inset-y-0 left-0 w-1.5 bg-brand" />
+          <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
+            <div className="min-w-0 space-y-1">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-700">{t.customer}</p>
+              <p className="text-base font-bold leading-snug text-slate-900">{delivery.customer_name}</p>
+              {customer?.address && <p className="max-w-xl text-slate-600">{customer.address}</p>}
+              {customer?.tax_id && <p className="text-xs text-slate-600">{t.taxId} {customer.tax_id}</p>}
+              {(customer?.contact_person || customer?.phone) && (
+                <p className="text-xs text-slate-600">
+                  {t.contact} {[customer.contact_person, customer.phone].filter(Boolean).join(" · ")}
+                </p>
+              )}
+            </div>
+            <div className="sm:min-w-40 sm:border-l sm:border-brand-200 sm:pl-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-700">
+                {t.project.replace(":", "")}
+              </p>
+              <p className="mt-1 font-semibold text-slate-900">{delivery.project_name ?? "-"}</p>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 text-sm mb-6">
-          <div>
-            <p className="text-gray-500 text-xs">{t.scheduled}</p>
-            <p className="text-gray-900 font-medium">
+        <div data-pdf-block className="mb-6 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-slate-200 bg-slate-200 text-[13px] sm:grid-cols-[0.9fr_1.1fr_2fr]">
+          <div className="bg-white p-3">
+            <p className="text-[11px] text-slate-500">{t.scheduled}</p>
+            <p className="mt-1 font-semibold text-slate-900">
               {delivery.scheduled_date ? formatDocDate(delivery.scheduled_date, lang) : "-"}
             </p>
           </div>
-          <div>
-            <p className="text-gray-500 text-xs">{t.receiver}</p>
-            <p className="text-gray-900 font-medium">{delivery.receiver_name || "-"}</p>
+          <div className="bg-white p-3">
+            <p className="text-[11px] text-slate-500">{t.receiver}</p>
+            <p className="mt-1 font-semibold text-slate-900">{delivery.receiver_name || "-"}</p>
+            {delivery.receiver_phone && <p className="mt-0.5 text-xs text-slate-500">{t.phone} {delivery.receiver_phone}</p>}
           </div>
-          <div className="col-span-2">
-            <p className="text-gray-500 text-xs">{t.address}</p>
-            <p className="text-gray-900 font-medium">{delivery.delivery_address || customer?.address || "-"}</p>
+          <div className="col-span-2 bg-white p-3 sm:col-span-1">
+            <p className="text-[11px] text-slate-500">{t.address}</p>
+            <p className="mt-1 font-semibold leading-snug text-slate-900">{delivery.delivery_address || customer?.address || "-"}</p>
           </div>
         </div>
 
-        <table className="w-full text-sm mb-4">
-          <thead>
-            <tr className="text-left text-gray-500 border-b border-gray-300">
+        <div className="mb-4 overflow-hidden">
+          <table className="w-full text-[13px]">
+          <thead className="bg-slate-50">
+            <tr data-pdf-block className="border-b border-slate-200 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               {!isNote && <th className="py-2 pr-2 font-medium w-8">✓</th>}
               <th className="py-2 pr-2 font-medium w-8">#</th>
-              <th className="py-2 pr-2 font-medium w-24"></th>
+              <th className="py-2 pr-2 font-medium w-32"></th>
               <th className="py-2 pr-2 font-medium">{t.item}</th>
               <th className="py-2 text-right font-medium">{t.qty}</th>
             </tr>
@@ -142,12 +162,12 @@ export default async function PrintDeliveryPage({
               customerLines!.lines.map((l, idx) => {
                 const label = lang === "en" && l.labelEn ? l.labelEn : l.label;
                 return (
-                  <tr key={l.id} className="border-b border-gray-200 align-top">
+                  <tr key={l.id} data-pdf-block className="border-b border-slate-100 align-top last:border-b-0">
                     <td className="py-2.5 pr-2 text-gray-500">{idx + 1}</td>
                     <td className="py-2.5 pr-2">
                       {l.imageUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={l.imageUrl} alt={label} className="w-20 h-20 rounded-md object-contain bg-gray-50 border border-gray-100" />
+                        <img src={l.imageUrl} alt={label} className="h-24 w-24 rounded-lg border border-slate-100 bg-slate-50 object-contain sm:h-28 sm:w-28" />
                       ) : null}
                     </td>
                     <td className="py-2.5 pr-2 text-gray-900">{label}</td>
@@ -158,17 +178,17 @@ export default async function PrintDeliveryPage({
                 );
               })}
             {rows.map((i, idx) => (
-              <tr key={i.id} className="border-b border-gray-200 align-top">
+              <tr key={i.id} data-pdf-block className="border-b border-slate-100 align-top last:border-b-0">
                 {!isNote && (
                   <td className="py-2.5 pr-2">
-                    <span className="inline-block w-5 h-5 border-2 border-gray-400 rounded" />
+                    <span className="inline-block h-5 w-5 rounded border-2 border-slate-400" />
                   </td>
                 )}
                 <td className="py-2.5 pr-2 text-gray-500">{(useCustomerLines ? customerLines!.lines.length : 0) + idx + 1}</td>
                 <td className="py-2.5 pr-2">
                   {productImage(i) ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={productImage(i)!} alt={itemName(i)} className="w-20 h-20 rounded-md object-contain bg-gray-50 border border-gray-100" />
+                    <img src={productImage(i)!} alt={itemName(i)} className="h-24 w-24 rounded-lg border border-slate-100 bg-slate-50 object-contain sm:h-28 sm:w-28" />
                   ) : null}
                 </td>
                 <td className="py-2.5 pr-2 text-gray-900">
@@ -188,7 +208,7 @@ export default async function PrintDeliveryPage({
                       {(i.image_paths as string[]).map((path) =>
                         photoUrls.get(path) ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img key={path} src={photoUrls.get(path)} alt={t.photoAlt} className="w-24 h-24 rounded-md object-cover border border-gray-200" />
+                          <img key={path} src={photoUrls.get(path)} alt={t.photoAlt} className="h-24 w-24 rounded-lg border border-slate-200 object-cover sm:h-28 sm:w-28" />
                         ) : null
                       )}
                     </div>
@@ -200,47 +220,54 @@ export default async function PrintDeliveryPage({
               </tr>
             ))}
           </tbody>
-          <tfoot>
-            <tr>
-              <td colSpan={isNote ? 3 : 4} className="py-2 text-right text-gray-500">{t.total}</td>
-              <td className="py-2 text-right font-bold text-gray-900 whitespace-nowrap">
+          <tfoot className="bg-brand-50/70">
+            <tr className="border-t border-brand-100">
+              <td colSpan={isNote ? 3 : 4} className="px-3 py-3 text-right font-medium text-brand-800">{t.total}</td>
+              <td className="py-3 pr-3 text-right font-bold text-brand-900 whitespace-nowrap">
                 {totalQty} {unitLabel("ชิ้น", totalQty, lang)}
               </td>
             </tr>
           </tfoot>
-        </table>
+          </table>
+        </div>
 
         {delivery.note && (
-          <p className="text-sm text-gray-700 mb-4">
-            <span className="text-gray-500">{t.note}</span> {delivery.note}
-          </p>
+          <div data-pdf-block className="mb-3 py-2 text-[13px] text-slate-700">
+            <span className="font-semibold text-amber-800">{t.note}</span> {delivery.note}
+          </div>
         )}
 
-        {isNote && <p className="text-sm text-gray-700 mb-2">{t.received}</p>}
+        {isNote && (
+          <div data-pdf-block className="mb-4 flex gap-3 py-2 text-[13px] text-slate-700">
+            <span className="mt-0.5 inline-block h-4 w-4 shrink-0 rounded border border-slate-400 bg-white" />
+            <p>{t.received}</p>
+          </div>
+        )}
 
-        <div className="mb-8 mt-6">
+        <div data-pdf-block className="mb-8 mt-5">
           <p className="text-xs text-gray-500 mb-2">{t.extraNote}</p>
           <div className="border-b border-gray-300 h-9" />
           <div className="border-b border-gray-300 h-9" />
         </div>
 
-        <div className="grid grid-cols-2 gap-8 text-sm mt-12 break-inside-avoid">
+        <div data-pdf-block className="mt-10 grid grid-cols-2 gap-4 break-inside-avoid text-xs sm:gap-8">
           {isNote ? (
             <>
-              <SignatureBlock label={t.sender} lang={lang} />
-              <SignatureBlock label={t.customerSign} lang={lang} />
+              <div className="rounded-xl border border-slate-200 p-4"><SignatureBlock label={t.sender} lang={lang} /></div>
+              <div className="rounded-xl border border-brand-200 bg-brand-50/30 p-4"><SignatureBlock label={t.customerSign} lang={lang} /></div>
             </>
           ) : (
             <>
-              <SignatureBlock label={t.picker} lang={lang} />
-              <SignatureBlock label={t.checker} lang={lang} />
+              <div className="rounded-xl border border-slate-200 p-4"><SignatureBlock label={t.picker} lang={lang} /></div>
+              <div className="rounded-xl border border-slate-200 p-4"><SignatureBlock label={t.checker} lang={lang} /></div>
             </>
           )}
         </div>
 
-        <p className="text-[10px] text-gray-500 text-center mt-10">
-          {t.printedOn} {printedOn} {t.by} {printerName ?? "-"}
-        </p>
+        <div data-pdf-block className="mt-10 border-t border-slate-200 pt-3 text-center">
+          <p className="text-[10px] text-slate-500">{t.printedOn} {printedOn} {t.by} {printerName ?? "-"}</p>
+          <p className="mt-1 text-[9px] font-medium tracking-[0.18em] text-brand-700">MINDFORM · BUILT FOR BETTER WORK</p>
+        </div>
       </div>
 
       <style>{`

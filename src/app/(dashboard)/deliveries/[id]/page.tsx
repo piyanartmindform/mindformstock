@@ -225,6 +225,7 @@ export default async function DeliveryDetailPage({ params }: { params: { id: str
         <p><span className="text-gray-500">วันนัดส่ง:</span> {delivery.scheduled_date ? formatDate(delivery.scheduled_date) : "-"}</p>
         <p><span className="text-gray-500">ที่อยู่ส่ง:</span> {delivery.delivery_address || "-"}</p>
         <p><span className="text-gray-500">ผู้รับหน้างาน:</span> {delivery.receiver_name || "-"}</p>
+        <p><span className="text-gray-500">เบอร์ติดต่อผู้รับ:</span> {delivery.receiver_phone || "-"}</p>
         {delivery.note && <p><span className="text-gray-500">หมายเหตุ:</span> {delivery.note}</p>}
       </Card>
 
@@ -266,6 +267,7 @@ export default async function DeliveryDetailPage({ params }: { params: { id: str
             scheduled_date: delivery.scheduled_date ?? "",
             delivery_address: delivery.delivery_address ?? "",
             receiver_name: delivery.receiver_name ?? "",
+            receiver_phone: delivery.receiver_phone ?? "",
             note: delivery.note ?? "",
           }}
         />

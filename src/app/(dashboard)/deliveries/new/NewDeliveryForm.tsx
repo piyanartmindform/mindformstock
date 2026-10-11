@@ -86,6 +86,7 @@ export function NewDeliveryForm({
         scheduled_date: fd.get("scheduled_date") || null,
         delivery_address: fd.get("delivery_address") || null,
         receiver_name: fd.get("receiver_name") || null,
+        receiver_phone: fd.get("receiver_phone") || null,
         note: fd.get("note") || null,
         created_by: user?.id ?? null,
       })
@@ -271,7 +272,15 @@ export function NewDeliveryForm({
           placeholder="ที่อยู่หน้างาน (ถ้าต่างจากที่อยู่ลูกค้า)"
         />
       </div>
-      <Input label="ผู้รับหน้างาน" name="receiver_name" placeholder="ชื่อ / เบอร์โทร (ถ้ามี)" />
+      <Input label="ผู้รับหน้างาน" name="receiver_name" placeholder="ชื่อผู้รับหน้างาน" />
+      <Input
+        label="เบอร์ติดต่อผู้รับหน้างาน"
+        name="receiver_phone"
+        type="tel"
+        inputMode="tel"
+        autoComplete="tel"
+        placeholder="เช่น 081-234-5678"
+      />
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium text-gray-700">หมายเหตุ</label>
         <textarea name="note" rows={2} className={textarea} />

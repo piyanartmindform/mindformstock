@@ -29,6 +29,7 @@ create table if not exists deliveries_mf (
   scheduled_date   date,
   delivery_address text,
   receiver_name    text,
+  receiver_phone   text,
   note             text,
   status           text not null default 'confirmed'
                    check (status in ('confirmed','prepared','scheduled','delivered','billed')),

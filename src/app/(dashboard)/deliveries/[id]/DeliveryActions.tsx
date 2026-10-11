@@ -16,6 +16,7 @@ interface Details {
   scheduled_date: string;
   delivery_address: string;
   receiver_name: string;
+  receiver_phone: string;
   note: string;
 }
 
@@ -82,6 +83,7 @@ export function DeliveryActions({
           scheduled_date: details.scheduled_date || null,
           delivery_address: details.delivery_address || null,
           receiver_name: details.receiver_name || null,
+          receiver_phone: details.receiver_phone || null,
           note: details.note || null,
         })
         .eq("id", id);
@@ -168,6 +170,18 @@ export function DeliveryActions({
             />
           </label>
           <label className="block text-sm text-gray-700">
+            เบอร์ติดต่อผู้รับหน้างาน
+            <input
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              value={details.receiver_phone}
+              onChange={(e) => setDetails({ ...details, receiver_phone: e.target.value })}
+              placeholder="เช่น 081-234-5678"
+              className="mt-1 h-12 w-full rounded-xl border border-gray-300 bg-white px-4 text-base"
+            />
+          </label>
+          <label className="block text-sm text-gray-700">
             หมายเหตุ
             <textarea
               rows={2}
@@ -176,7 +190,7 @@ export function DeliveryActions({
               className="mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base"
             />
           </label>
-          <Button type="submit" variant="secondary" fullWidth loading={busy}>บันทึกรายละเอียด</Button>
+          <Button type="submit" fullWidth loading={busy}>บันทึกรายละเอียด</Button>
         </form>
       </details>
 

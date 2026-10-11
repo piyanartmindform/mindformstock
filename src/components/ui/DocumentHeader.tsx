@@ -14,7 +14,7 @@ export function DocumentHeader({
 }) {
   const t = docText(lang);
   return (
-    <div className="flex items-start justify-between gap-4 border-b-2 border-brand pb-4 mb-6">
+    <div data-pdf-block className="flex items-start justify-between gap-4 border-b-2 border-brand pb-4 mb-6">
       <div className="min-w-0">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logo.png" alt="MINDFORM" className="h-6 w-auto" />
