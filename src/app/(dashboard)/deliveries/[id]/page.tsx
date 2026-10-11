@@ -16,7 +16,8 @@ import { DeliveryActions } from "./DeliveryActions";
 import { ItemPhotos } from "./ItemPhotos";
 import { AddCustomItem, ItemEditor } from "./ItemEditor";
 import { AddStockItem, type AvailableItem } from "./AddStockItem";
-import { ITEM_SELECT, getItemPhotoUrls, isCustom, itemName, itemUnit, productImage } from "@/lib/deliveryItems";
+import { ITEM_SELECT, getCustomerLines, getItemPhotoUrls, isCustom, itemName, itemUnit, productImage } from "@/lib/deliveryItems";
+import { CustomerItemsEditor } from "./CustomerItemsEditor";
 
 export default async function DeliveryDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -32,6 +33,12 @@ export default async function DeliveryDetailPage({ params }: { params: { id: str
 
   const status = delivery.status as DeliveryStatus;
   const itemPhotoUrls = await getItemPhotoUrls(supabase, delivery.delivery_items_mf ?? []);
+  const customer = await getCustomerLines(supabase, delivery.id);
+  const customerLabelById = new Map(customer.lines.map((l) => [l.id, l.label]));
+  const linksByItem = new Map<string, { customerItemId: string; quantity: number }[]>();
+  for (const l of customer.links) {
+    linksByItem.set(l.deliveryItemId, [...(linksByItem.get(l.deliveryItemId) ?? []), { customerItemId: l.customerItemId, quantity: l.quantity }]);
+  }
 
   // lines can be edited until the customer has signed (delivered / billed are locked)
   const canEditItems = role === "admin" && ["confirmed", "prepared", "scheduled"].includes(status);
@@ -144,6 +151,14 @@ export default async function DeliveryDetailPage({ params }: { params: { id: str
             </div>
             {i.custom_source && <p className="text-xs text-gray-500 mt-0.5">ผู้ผลิต/แหล่งที่มา: {i.custom_source}</p>}
             {i.item_note && <p className="text-xs text-gray-600 mt-0.5">{i.item_note}</p>}
+            {(linksByItem.get(i.id) ?? []).length > 0 && (
+              <p className="text-xs text-sky-800 mt-0.5">
+                ในใบลูกค้า:{" "}
+                {(linksByItem.get(i.id) ?? [])
+                  .map((a) => `${customerLabelById.get(a.customerItemId)} (${a.quantity})`)
+                  .join(", ")}
+              </p>
+            )}
             <ItemPhotos
               deliveryId={delivery.id}
               itemId={i.id}
@@ -174,6 +189,33 @@ export default async function DeliveryDetailPage({ params }: { params: { id: str
         {canEditItems && <AddStockItem deliveryId={delivery.id} available={availableToAdd} />}
         {canEditItems && <AddCustomItem deliveryId={delivery.id} />}
       </Card>
+
+      {customer.ready && (canEditItems || customer.lines.length > 0) && (
+        <Card>
+          <CustomerItemsEditor
+            deliveryId={delivery.id}
+            canEdit={canEditItems}
+            linksReady={customer.linksReady}
+            lines={(delivery.delivery_items_mf ?? []).map((i: any) => ({
+              id: i.id,
+              name: `${itemName(i)}${i.products_mf?.model ? ` · ${i.products_mf.model}` : ""}`,
+              quantity: i.quantity,
+              unit: itemUnit(i),
+              allocations: linksByItem.get(i.id) ?? [],
+            }))}
+            items={customer.lines.map((l) => ({
+              ...l,
+              assigned: customer.links
+                .filter((x) => x.customerItemId === l.id)
+                .map((x) => {
+                  const item = (delivery.delivery_items_mf ?? []).find((i: any) => i.id === x.deliveryItemId);
+                  return item ? `${itemName(item)} ×${x.quantity}` : "";
+                })
+                .filter(Boolean),
+            }))}
+          />
+        </Card>
+      )}
 
       <Card className="space-y-1 text-sm">
         <p><span className="text-gray-500">วันนัดส่ง:</span> {delivery.scheduled_date ? formatDate(delivery.scheduled_date) : "-"}</p>

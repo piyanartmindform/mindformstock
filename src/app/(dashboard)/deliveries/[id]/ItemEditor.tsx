@@ -101,6 +101,7 @@ export function ItemEditor({ item }: { item: EditableItem }) {
         <input value={source} onChange={(e) => setSource(e.target.value)} placeholder="ผู้ผลิต / แหล่งที่มา" aria-label="ผู้ผลิต" className={field} />
       )}
       <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="โน้ตของรายการนี้" aria-label="โน้ต" className={field} />
+
       {error && <p className="text-xs text-red-500">{error}</p>}
       <div className="flex gap-2">
         <button onClick={save} disabled={busy} className={`${btn} border-brand bg-brand text-white`}>บันทึก</button>

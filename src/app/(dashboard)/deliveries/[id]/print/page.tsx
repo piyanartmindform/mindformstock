@@ -6,7 +6,7 @@ import { getAuthUser } from "@/lib/auth";
 import { PrintButton } from "@/components/ui/PrintButton";
 import { DocumentHeader } from "@/components/ui/DocumentHeader";
 import { SignatureBlock } from "@/components/ui/SignatureBlock";
-import { ITEM_SELECT, getItemPhotoUrls, isCustom, itemName, itemUnit, productImage } from "@/lib/deliveryItems";
+import { ITEM_SELECT, getCustomerLines, getItemPhotoUrls, isCustom, itemName, itemUnit, productImage } from "@/lib/deliveryItems";
 
 async function getPrinterName() {
   const user = await getAuthUser();
@@ -42,8 +42,22 @@ export default async function PrintDeliveryPage({
     .maybeSingle();
 
   const items: any[] = delivery.delivery_items_mf ?? [];
-  const totalQty = items.reduce((n, i) => n + i.quantity, 0);
   const photoUrls = await getItemPhotoUrls(supabase, items);
+
+  // customer note: show the customer-facing lines, then any prep line not assigned to one
+  const customerLines = isNote ? await getCustomerLines(supabase, delivery.id) : null;
+  const useCustomerLines = !!customerLines && customerLines.lines.length > 0;
+  // quantity of a prep line already put into customer lines is not repeated; the rest still shows
+  const allocated = new Map<string, number>();
+  for (const l of customerLines?.links ?? []) {
+    allocated.set(l.deliveryItemId, (allocated.get(l.deliveryItemId) ?? 0) + l.quantity);
+  }
+  const rows = items
+    .map((i) => ({ ...i, shownQty: useCustomerLines ? Math.max(0, i.quantity - (allocated.get(i.id) ?? 0)) : i.quantity }))
+    .filter((i) => i.shownQty > 0);
+  const totalQty =
+    rows.reduce((n, i) => n + i.shownQty, 0) +
+    (useCustomerLines ? customerLines!.lines.reduce((n, l) => n + l.quantity, 0) : 0);
 
   return (
     <div className="min-h-screen bg-gray-50 print:bg-white">
@@ -98,14 +112,30 @@ export default async function PrintDeliveryPage({
             </tr>
           </thead>
           <tbody>
-            {items.map((i, idx) => (
+            {useCustomerLines &&
+              customerLines!.lines.map((l, idx) => (
+                <tr key={l.id} className="border-b border-gray-200 align-top">
+                  <td className="py-2.5 pr-2 text-gray-500">{idx + 1}</td>
+                  <td className="py-2.5 pr-2">
+                    {l.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={l.imageUrl} alt={l.label} className="w-14 h-14 rounded-md object-contain bg-gray-50 border border-gray-100" />
+                    ) : null}
+                  </td>
+                  <td className="py-2.5 pr-2 text-gray-900">{l.label}</td>
+                  <td className="py-2.5 text-right font-medium whitespace-nowrap">
+                    {l.quantity} {l.unit}
+                  </td>
+                </tr>
+              ))}
+            {rows.map((i, idx) => (
               <tr key={i.id} className="border-b border-gray-200 align-top">
                 {!isNote && (
                   <td className="py-2.5 pr-2">
                     <span className="inline-block w-5 h-5 border-2 border-gray-400 rounded" />
                   </td>
                 )}
-                <td className="py-2.5 pr-2 text-gray-500">{idx + 1}</td>
+                <td className="py-2.5 pr-2 text-gray-500">{(useCustomerLines ? customerLines!.lines.length : 0) + idx + 1}</td>
                 <td className="py-2.5 pr-2">
                   {productImage(i) ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -132,7 +162,7 @@ export default async function PrintDeliveryPage({
                   )}
                 </td>
                 <td className="py-2.5 text-right font-medium whitespace-nowrap">
-                  {i.quantity} {itemUnit(i)}
+                  {i.shownQty} {itemUnit(i)}
                 </td>
               </tr>
             ))}
