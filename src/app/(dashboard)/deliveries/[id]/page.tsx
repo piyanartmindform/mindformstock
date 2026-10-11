@@ -230,18 +230,19 @@ export default async function DeliveryDetailPage({ params }: { params: { id: str
       </Card>
 
       <div className="grid grid-cols-2 gap-2">
-        <Link
-          href={`/deliveries/${delivery.id}/print?doc=prep`}
-          className="h-12 rounded-xl border border-gray-300 bg-white text-gray-700 text-sm font-medium flex items-center justify-center active:bg-gray-100"
-        >
-          🖨️ ใบเตรียมของ
-        </Link>
-        <Link
-          href={`/deliveries/${delivery.id}/print?doc=note`}
-          className="h-12 rounded-xl border border-gray-300 bg-white text-gray-700 text-sm font-medium flex items-center justify-center active:bg-gray-100"
-        >
-          🖨️ ใบส่งงาน
-        </Link>
+        {[
+          { doc: "prep", name: "ใบเตรียมของ" },
+          { doc: "note", name: "ใบส่งงาน" },
+        ].map((d) => (
+          <Link
+            key={d.doc}
+            href={`/deliveries/${delivery.id}/print?doc=${d.doc}&preview=1`}
+            className="rounded-xl border border-brand bg-brand/5 px-3 py-2.5 text-center active:bg-brand/10"
+          >
+            <span className="block text-sm font-semibold text-gray-900">{d.name}</span>
+            <span className="block text-xs font-medium text-brand-700">📄 ตัวอย่าง / ดาวน์โหลด PDF</span>
+          </Link>
+        ))}
       </div>
 
       {photos.length > 0 && (

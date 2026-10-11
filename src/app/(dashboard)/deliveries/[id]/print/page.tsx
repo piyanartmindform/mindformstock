@@ -21,7 +21,7 @@ export default async function PrintDeliveryPage({
   searchParams,
 }: {
   params: { id: string };
-  searchParams: { doc?: string; lang?: string };
+  searchParams: { doc?: string; lang?: string; preview?: string };
 }) {
   const isNote = searchParams.doc === "note";
   const lang = docLang(searchParams.lang);
@@ -80,6 +80,7 @@ export default async function PrintDeliveryPage({
             </Link>
           </div>
           <PdfDownloadButton
+            autoOpen={searchParams.preview === "1"}
             targetId="print-area"
             fileName={`${delivery.doc_no}_${isNote ? "delivery-note" : "picking-list"}${lang === "en" ? "-EN" : ""}.pdf`}
             labels={{

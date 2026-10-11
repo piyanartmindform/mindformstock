@@ -32,13 +32,24 @@ export function PdfDownloadButton({
   targetId,
   fileName,
   labels,
+  autoOpen = false,
 }: {
   targetId: string;
   fileName: string;
   labels: PdfLabels;
+  /** open the preview right after the page loads (used by the links on the round page) */
+  autoOpen?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
   const [pages, setPages] = useState<PreviewPage[] | null>(null);
+
+  useEffect(() => {
+    if (!autoOpen) return;
+    // let the images of the document start loading first
+    const timer = setTimeout(() => buildPreview(), 400);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoOpen]);
 
   useEffect(() => {
     if (!pages) return;
@@ -99,28 +110,90 @@ export function PdfDownloadButton({
         .map((el) => el.getBoundingClientRect().bottom - top)
         .sort((a, b) => a - b);
 
+      // header row of every table: pages that continue a table repeat it at the top
+      const tableHeads = Array.from(clone.querySelectorAll("table")).flatMap((table) => {
+        const thead = table.querySelector("thead");
+        if (!thead) return [];
+        const h = thead.getBoundingClientRect();
+        return [{ headTop: h.top - top, headBottom: h.bottom - top, tableBottom: table.getBoundingClientRect().bottom - top }];
+      });
+
+      // the document header (logo, company, title) is repeated at the top of every later page
+      const letterEl = clone.querySelector("[data-pdf-letterhead]");
+      const letter = letterEl
+        ? { top: letterEl.getBoundingClientRect().top - top, bottom: letterEl.getBoundingClientRect().bottom - top }
+        : null;
+      const LETTER_GAP = 14; // css px of space between the repeated header and the page content
+
       const scale = Math.min(2.5, 1800 / width);
-      const canvas = await html2canvas(clone, { scale, useCORS: true, backgroundColor: "#ffffff", logging: false });
+      const render = (options: { y?: number; height?: number }) =>
+        html2canvas(clone, { scale, useCORS: true, backgroundColor: "#ffffff", logging: false, ...options });
+
+      // One picture of the whole document is fastest, but a very long document makes a canvas
+      // the browser cannot create (iPhone Safari is the tightest, about 16 million pixels). In
+      // that case each page is rendered on its own from a cropped area.
+      const whole = width * scale * totalH * scale <= 14_000_000;
+      const wholeCanvas = whole ? await render({}) : null;
+
+      // picture of a vertical range of the document (css px)
+      const crop = async (from: number, to: number): Promise<HTMLCanvasElement> => {
+        if (!wholeCanvas) return render({ y: from, height: to - from });
+        const piece = document.createElement("canvas");
+        piece.width = wholeCanvas.width;
+        piece.height = Math.max(1, Math.round((to - from) * scale));
+        const ctx = piece.getContext("2d")!;
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, piece.width, piece.height);
+        ctx.drawImage(wholeCanvas, 0, Math.round(from * scale), wholeCanvas.width, piece.height, 0, 0, piece.width, piece.height);
+        return piece;
+      };
 
       const result: PreviewPage[] = [];
       let start = 0;
       while (start < totalH - 1) {
-        const limit = start + pageCapacity;
+        // later pages repeat the document header; a page that starts inside a table also repeats
+        // that table's header row
+        const letterH = start > 0 && letter ? letter.bottom - letter.top + LETTER_GAP : 0;
+        const head =
+          start > 0 ? tableHeads.find((t) => start >= t.headBottom - 1 && start < t.tableBottom - 8) : undefined;
+        const headH = head ? head.headBottom - head.headTop : 0;
+
+        const limit = start + pageCapacity - letterH - headH;
         let cut = totalH;
         if (totalH > limit) {
           const fits = boundaries.filter((b) => b > start + 40 && b <= limit);
           cut = fits.length > 0 ? fits[fits.length - 1] : limit;
         }
 
-        const slice = document.createElement("canvas");
-        slice.width = canvas.width;
-        slice.height = Math.max(1, Math.round((cut - start) * scale));
-        const ctx = slice.getContext("2d")!;
-        ctx.fillStyle = "#fff";
-        ctx.fillRect(0, 0, slice.width, slice.height);
-        ctx.drawImage(canvas, 0, Math.round(start * scale), canvas.width, slice.height, 0, 0, slice.width, slice.height);
+        // stack: [document header] [gap] [table header row] [page content]
+        const parts: { canvas?: HTMLCanvasElement; gapCssPx?: number }[] = [];
+        if (letterH > 0 && letter) {
+          parts.push({ canvas: await crop(letter.top, letter.bottom) });
+          parts.push({ gapCssPx: LETTER_GAP });
+        }
+        if (head) parts.push({ canvas: await crop(head.headTop, head.headBottom) });
+        parts.push({ canvas: await crop(start, cut) });
 
-        result.push({ dataUrl: slice.toDataURL("image/jpeg", 0.92), heightMm: ((cut - start) / width) * PAGE_W_MM });
+        const pageCanvas = document.createElement("canvas");
+        pageCanvas.width = parts.find((x) => x.canvas)!.canvas!.width;
+        pageCanvas.height = parts.reduce((n, x) => n + (x.canvas ? x.canvas.height : Math.round((x.gapCssPx ?? 0) * scale)), 0);
+        const ctx = pageCanvas.getContext("2d")!;
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+        let y = 0;
+        for (const part of parts) {
+          if (part.canvas) {
+            ctx.drawImage(part.canvas, 0, y);
+            y += part.canvas.height;
+          } else {
+            y += Math.round((part.gapCssPx ?? 0) * scale);
+          }
+        }
+
+        result.push({
+          dataUrl: pageCanvas.toDataURL("image/jpeg", 0.92),
+          heightMm: ((cut - start + letterH + headH) / width) * PAGE_W_MM,
+        });
         start = cut;
       }
 
