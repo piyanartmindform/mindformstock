@@ -32,6 +32,7 @@ export async function getItemPhotoUrls(supabase: SupabaseClient, items: any[]): 
 export interface CustomerLine {
   id: string;
   label: string;
+  labelEn: string | null;
   quantity: number;
   unit: string;
   imagePath: string | null;
@@ -51,12 +52,17 @@ export async function getCustomerLines(
   supabase: SupabaseClient,
   deliveryId: string
 ): Promise<{ ready: boolean; linksReady: boolean; lines: CustomerLine[]; links: CustomerLink[] }> {
-  const { data, error } = await supabase
-    .from("delivery_customer_items_mf")
-    .select("id, label, quantity, unit, image_path")
-    .eq("delivery_id", deliveryId)
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true });
+  // label_en may not exist yet (delivery-customer-label-en.sql); retry without it
+  const load = (columns: string) =>
+    supabase
+      .from("delivery_customer_items_mf")
+      .select(columns)
+      .eq("delivery_id", deliveryId)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true });
+  let result: { data: any[] | null; error: unknown } = (await load("id, label, label_en, quantity, unit, image_path")) as any;
+  if (result.error) result = (await load("id, label, quantity, unit, image_path")) as any;
+  const { data, error } = result;
   if (error || !data) return { ready: false, linksReady: false, lines: [], links: [] };
 
   const paths = data.flatMap((r: any) => (r.image_path ? [r.image_path as string] : []));
@@ -93,6 +99,7 @@ export async function getCustomerLines(
     lines: data.map((r: any) => ({
       id: r.id,
       label: r.label,
+      labelEn: r.label_en ?? null,
       quantity: r.quantity,
       unit: r.unit ?? "",
       imagePath: r.image_path ?? null,
@@ -100,4 +107,21 @@ export async function getCustomerLines(
     })),
     links,
   };
+}
+
+// Manual order of a round's lines (delivery_items_mf.sort_order). Returns null while the column
+// does not exist yet, so callers keep the default order instead of failing.
+export async function getItemOrder(supabase: SupabaseClient, deliveryId: string): Promise<Map<string, number> | null> {
+  const { data, error } = await supabase.from("delivery_items_mf").select("id, sort_order").eq("delivery_id", deliveryId);
+  if (error || !data) return null;
+  return new Map(data.map((r: any) => [r.id as string, r.sort_order as number]));
+}
+
+// Sort lines by their manual order; lines without one keep the order they came in.
+export function applyItemOrder<T extends { id: string }>(items: T[], order: Map<string, number> | null): T[] {
+  if (!order) return items;
+  return items
+    .map((item, index) => ({ item, index }))
+    .sort((a, b) => (order.get(a.item.id) ?? 0) - (order.get(b.item.id) ?? 0) || a.index - b.index)
+    .map((x) => x.item);
 }

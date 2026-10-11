@@ -20,7 +20,7 @@ export interface EditableItem {
 }
 
 // Edit quantity / note (and name, unit, source for custom lines) or remove one line.
-export function ItemEditor({ item }: { item: EditableItem }) {
+export function ItemEditor({ item, orderedIds }: { item: EditableItem; orderedIds: string[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -54,6 +54,25 @@ export function ItemEditor({ item }: { item: EditableItem }) {
     router.refresh();
   }
 
+  // swap this line with its neighbour and renumber the whole round 0..n-1
+  async function move(direction: -1 | 1) {
+    const from = orderedIds.indexOf(item.id);
+    const to = from + direction;
+    if (from < 0 || to < 0 || to >= orderedIds.length) return;
+    const next = [...orderedIds];
+    [next[from], next[to]] = [next[to], next[from]];
+    setBusy(true);
+    setError("");
+    const supabase = createClient();
+    const results = await Promise.all(
+      next.map((id, index) => supabase.from("delivery_items_mf").update({ sort_order: index }).eq("id", id))
+    );
+    setBusy(false);
+    const failed = results.find((r) => r.error);
+    if (failed?.error) { setError(failed.error.message); return; }
+    router.refresh();
+  }
+
   async function remove() {
     if (!confirm("ลบรายการนี้ออกจากรอบส่ง? (รูปที่แนบไว้จะไม่ถูกใช้อีก)")) return;
     setBusy(true);
@@ -65,13 +84,34 @@ export function ItemEditor({ item }: { item: EditableItem }) {
 
   if (!open) {
     return (
-      <div className="flex gap-2 mt-2">
+      <div className="flex flex-wrap gap-2 mt-2">
         <button onClick={() => setOpen(true)} className={`${btn} border-gray-300 bg-white text-gray-700 active:bg-gray-100`}>
           ✏️ แก้ไข
         </button>
         <button onClick={remove} disabled={busy} className={`${btn} border-red-300 bg-white text-red-600 active:bg-red-50`}>
           ลบ
         </button>
+        {orderedIds.length > 1 && (
+          <span className="ml-auto flex gap-2">
+            <button
+              onClick={() => move(-1)}
+              disabled={busy || orderedIds.indexOf(item.id) === 0}
+              aria-label="เลื่อนขึ้น"
+              className={`${btn} w-9 border-gray-300 bg-white text-gray-700 active:bg-gray-100`}
+            >
+              ▲
+            </button>
+            <button
+              onClick={() => move(1)}
+              disabled={busy || orderedIds.indexOf(item.id) === orderedIds.length - 1}
+              aria-label="เลื่อนลง"
+              className={`${btn} w-9 border-gray-300 bg-white text-gray-700 active:bg-gray-100`}
+            >
+              ▼
+            </button>
+          </span>
+        )}
+        {error && <span className="basis-full text-xs text-red-500">{error}</span>}
       </div>
     );
   }

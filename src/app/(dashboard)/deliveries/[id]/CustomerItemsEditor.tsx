@@ -8,6 +8,7 @@ import { resizeImage } from "@/lib/resizeImage";
 export interface CustomerItem {
   id: string;
   label: string;
+  labelEn: string | null;
   quantity: number;
   unit: string;
   imagePath: string | null;
@@ -48,6 +49,7 @@ export function CustomerItemsEditor({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [label, setLabel] = useState("");
+  const [labelEn, setLabelEn] = useState("");
   const [qty, setQty] = useState("1");
   const [unit, setUnit] = useState("ชุด");
   const [file, setFile] = useState<File | null>(null);
@@ -58,6 +60,7 @@ export function CustomerItemsEditor({
   function startEdit(item: CustomerItem | null) {
     setEditingId(item ? item.id : "new");
     setLabel(item?.label ?? "");
+    setLabelEn(item?.labelEn ?? "");
     setQty(String(item?.quantity ?? 1));
     setUnit(item?.unit ?? "ชุด");
     setFile(null);
@@ -105,7 +108,14 @@ export function CustomerItemsEditor({
     try {
       const existing = items.find((i) => i.id === editingId) ?? null;
       let id = existing?.id ?? "";
-      const base = { label: label.trim(), quantity: q, unit: unit.trim() || null };
+      // label_en is only written when there is something to write (or to clear), so saving
+      // keeps working before delivery-customer-label-en.sql has been run
+      const base = {
+        label: label.trim(),
+        quantity: q,
+        unit: unit.trim() || null,
+        ...(labelEn.trim() || existing?.labelEn ? { label_en: labelEn.trim() || null } : {}),
+      };
 
       if (!existing) {
         const { data, error: insErr } = await supabase
@@ -150,6 +160,25 @@ export function CustomerItemsEditor({
     setBusy(false);
   }
 
+  // swap with the neighbour and renumber the customer lines 0..n-1
+  async function move(item: CustomerItem, direction: -1 | 1) {
+    const from = items.findIndex((i) => i.id === item.id);
+    const to = from + direction;
+    if (from < 0 || to < 0 || to >= items.length) return;
+    const next = items.map((i) => i.id);
+    [next[from], next[to]] = [next[to], next[from]];
+    setBusy(true);
+    setError("");
+    const supabase = createClient();
+    const results = await Promise.all(
+      next.map((id, index) => supabase.from("delivery_customer_items_mf").update({ sort_order: index }).eq("id", id))
+    );
+    setBusy(false);
+    const failed = results.find((r) => r.error);
+    if (failed?.error) { setError(failed.error.message); return; }
+    router.refresh();
+  }
+
   async function remove(item: CustomerItem) {
     if (!confirm(`ลบ "${item.label}" ออกจากใบส่งงานลูกค้า? (ชิ้นที่ผูกไว้จะกลับไปแสดงแยกเป็นรายชิ้น)`)) return;
     setBusy(true);
@@ -164,6 +193,7 @@ export function CustomerItemsEditor({
   const form = (
     <div className="space-y-2 rounded-xl border border-gray-200 bg-gray-50 p-3">
       <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="ชื่อที่ลูกค้าเห็น เช่น โต๊ะ 4 ที่นั่ง มีสกรีน" aria-label="ชื่อรายการสำหรับลูกค้า" className={field} />
+      <input value={labelEn} onChange={(e) => setLabelEn(e.target.value)} placeholder="ชื่อภาษาอังกฤษ (ไม่บังคับ ใช้ในใบส่งงานเวอร์ชันอังกฤษ)" aria-label="ชื่อภาษาอังกฤษ" className={field} />
       <div className="flex gap-2">
         <input type="number" inputMode="numeric" min="1" value={qty} onChange={(e) => setQty(e.target.value)} aria-label="จำนวน" className={`${field} text-right`} />
         <input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="หน่วย" aria-label="หน่วย" className={field} />
@@ -265,6 +295,7 @@ export function CustomerItemsEditor({
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
                 <p className="font-medium text-gray-900">{item.label}</p>
+                {item.labelEn && <p className="text-xs text-gray-500">EN: {item.labelEn}</p>}
                 <span className="font-medium whitespace-nowrap">{item.quantity} {item.unit}</span>
               </div>
               <p className="text-xs text-gray-500 mt-0.5">
@@ -274,6 +305,26 @@ export function CustomerItemsEditor({
                 <div className="flex gap-2 mt-2">
                   <button onClick={() => startEdit(item)} className={`${btn} border-gray-300 bg-white text-gray-700 active:bg-gray-100`}>✏️ แก้ไข</button>
                   <button onClick={() => remove(item)} disabled={busy} className={`${btn} border-red-300 bg-white text-red-600 active:bg-red-50`}>ลบ</button>
+                  {items.length > 1 && (
+                    <span className="ml-auto flex gap-2">
+                      <button
+                        onClick={() => move(item, -1)}
+                        disabled={busy || items[0].id === item.id}
+                        aria-label="เลื่อนขึ้น"
+                        className={`${btn} w-9 border-gray-300 bg-white text-gray-700 active:bg-gray-100`}
+                      >
+                        ▲
+                      </button>
+                      <button
+                        onClick={() => move(item, 1)}
+                        disabled={busy || items[items.length - 1].id === item.id}
+                        aria-label="เลื่อนลง"
+                        className={`${btn} w-9 border-gray-300 bg-white text-gray-700 active:bg-gray-100`}
+                      >
+                        ▼
+                      </button>
+                    </span>
+                  )}
                 </div>
               )}
             </div>

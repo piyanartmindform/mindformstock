@@ -16,7 +16,7 @@ import { DeliveryActions } from "./DeliveryActions";
 import { ItemPhotos } from "./ItemPhotos";
 import { AddCustomItem, ItemEditor } from "./ItemEditor";
 import { AddStockItem, type AvailableItem } from "./AddStockItem";
-import { ITEM_SELECT, getCustomerLines, getItemPhotoUrls, isCustom, itemName, itemUnit, productImage } from "@/lib/deliveryItems";
+import { ITEM_SELECT, applyItemOrder, getCustomerLines, getItemOrder, getItemPhotoUrls, isCustom, itemName, itemUnit, productImage } from "@/lib/deliveryItems";
 import { CustomerItemsEditor } from "./CustomerItemsEditor";
 
 export default async function DeliveryDetailPage({ params }: { params: { id: string } }) {
@@ -30,6 +30,9 @@ export default async function DeliveryDetailPage({ params }: { params: { id: str
       .single(),
   ]);
   if (!delivery) notFound();
+  // manual order of the lines (up / down buttons); everything below reads the sorted array
+  delivery.delivery_items_mf = applyItemOrder(delivery.delivery_items_mf ?? [], await getItemOrder(supabase, delivery.id));
+  const orderedItemIds: string[] = delivery.delivery_items_mf.map((i: any) => i.id);
 
   const status = delivery.status as DeliveryStatus;
   const itemPhotoUrls = await getItemPhotoUrls(supabase, delivery.delivery_items_mf ?? []);
@@ -170,6 +173,7 @@ export default async function DeliveryDetailPage({ params }: { params: { id: str
             />
             {canEditItems && (
               <ItemEditor
+                orderedIds={orderedItemIds}
                 item={{
                   id: i.id,
                   quantity: i.quantity,

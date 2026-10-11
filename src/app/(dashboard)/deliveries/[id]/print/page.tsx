@@ -1,12 +1,12 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { formatDate } from "@/lib/utils";
 import { getAuthUser } from "@/lib/auth";
 import { PrintButton } from "@/components/ui/PrintButton";
 import { DocumentHeader } from "@/components/ui/DocumentHeader";
 import { SignatureBlock } from "@/components/ui/SignatureBlock";
-import { ITEM_SELECT, getCustomerLines, getItemPhotoUrls, isCustom, itemName, itemUnit, productImage } from "@/lib/deliveryItems";
+import { docLang, docText, formatDocDate, unitLabel } from "@/lib/docI18n";
+import { ITEM_SELECT, applyItemOrder, getCustomerLines, getItemOrder, getItemPhotoUrls, isCustom, itemName, itemUnit, productImage } from "@/lib/deliveryItems";
 
 async function getPrinterName() {
   const user = await getAuthUser();
@@ -21,9 +21,12 @@ export default async function PrintDeliveryPage({
   searchParams,
 }: {
   params: { id: string };
-  searchParams: { doc?: string };
+  searchParams: { doc?: string; lang?: string };
 }) {
   const isNote = searchParams.doc === "note";
+  const lang = docLang(searchParams.lang);
+  const t = docText(lang);
+  const docParam = isNote ? "note" : "prep";
   const supabase = createClient();
   const [{ data: delivery }, printerName] = await Promise.all([
     supabase
@@ -41,7 +44,7 @@ export default async function PrintDeliveryPage({
     .eq("name", delivery.customer_name)
     .maybeSingle();
 
-  const items: any[] = delivery.delivery_items_mf ?? [];
+  const items: any[] = applyItemOrder(delivery.delivery_items_mf ?? [], await getItemOrder(supabase, delivery.id));
   const photoUrls = await getItemPhotoUrls(supabase, items);
 
   // customer note: show the customer-facing lines, then any prep line not assigned to one
@@ -59,44 +62,67 @@ export default async function PrintDeliveryPage({
     rows.reduce((n, i) => n + i.shownQty, 0) +
     (useCustomerLines ? customerLines!.lines.reduce((n, l) => n + l.quantity, 0) : 0);
 
+  const printedOn = formatDocDate(new Date().toISOString(), lang);
+  const langLink = (target: "th" | "en") => `/deliveries/${delivery.id}/print?doc=${docParam}&lang=${target}`;
+  const toggle = "inline-flex items-center justify-center h-9 min-w-10 px-2.5 rounded-md text-sm font-semibold";
+
   return (
     <div className="min-h-screen bg-gray-50 print:bg-white">
-      <div className="no-print sticky top-14 md:top-0 z-10 bg-gray-50 border-b border-gray-200 p-4 flex items-center justify-between">
-        <Link href={`/deliveries/${delivery.id}`} className="text-sm text-brand">← กลับ</Link>
-        <PrintButton label={isNote ? "🖨️ พิมพ์ใบส่งงาน" : "🖨️ พิมพ์ใบเตรียมของ"} />
+      <div className="no-print sticky top-14 md:top-0 z-10 bg-gray-50 border-b border-gray-200 p-4 flex items-center justify-between gap-3">
+        <Link href={`/deliveries/${delivery.id}`} className="text-sm text-brand">{t.back}</Link>
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-lg border border-gray-300 bg-white p-0.5" aria-label="Language">
+            <Link href={langLink("th")} className={`${toggle} ${lang === "th" ? "bg-brand text-white" : "text-gray-700"}`}>
+              ไทย
+            </Link>
+            <Link href={langLink("en")} className={`${toggle} ${lang === "en" ? "bg-brand text-white" : "text-gray-700"}`}>
+              EN
+            </Link>
+          </div>
+          <PrintButton label={isNote ? t.printNote : t.printPick} />
+        </div>
       </div>
 
       <div className="max-w-2xl mx-auto p-6 print:p-0 bg-white print:bg-white">
         <DocumentHeader
-          title={isNote ? "ใบส่งงาน" : "ใบเตรียมของ"}
+          title={isNote ? t.noteTitle : t.pickTitle}
           docNo={delivery.doc_no}
           issuedAt={new Date().toISOString()}
+          lang={lang}
         />
 
         <div className="border border-gray-300 rounded-lg p-4 text-sm mb-4 space-y-1">
-          <p className="text-gray-500 text-xs">ลูกค้า</p>
+          <p className="text-gray-500 text-xs">{t.customer}</p>
           <p className="text-gray-900 font-bold">{delivery.customer_name}</p>
           {customer?.address && <p className="text-gray-700">{customer.address}</p>}
-          {customer?.tax_id && <p className="text-gray-700">เลขประจำตัวผู้เสียภาษี {customer.tax_id}</p>}
+          {customer?.tax_id && (
+            <p className="text-gray-700">
+              {t.taxId} {customer.tax_id}
+            </p>
+          )}
           {(customer?.contact_person || customer?.phone) && (
-            <p className="text-gray-700">ผู้ติดต่อ {[customer.contact_person, customer.phone].filter(Boolean).join(" · ")}</p>
+            <p className="text-gray-700">
+              {t.contact} {[customer.contact_person, customer.phone].filter(Boolean).join(" · ")}
+            </p>
           )}
           <p className="text-gray-700 pt-1">
-            โปรเจค: <span className="font-medium text-gray-900">{delivery.project_name ?? "-"}</span>
+            {t.project} <span className="font-medium text-gray-900">{delivery.project_name ?? "-"}</span>
           </p>
         </div>
 
         <div className="grid grid-cols-2 gap-4 text-sm mb-6">
           <div>
-            <p className="text-gray-500 text-xs">วันนัดส่ง/ติดตั้ง</p>
-            <p className="text-gray-900 font-medium">{delivery.scheduled_date ? formatDate(delivery.scheduled_date) : "-"}</p>
+            <p className="text-gray-500 text-xs">{t.scheduled}</p>
+            <p className="text-gray-900 font-medium">
+              {delivery.scheduled_date ? formatDocDate(delivery.scheduled_date, lang) : "-"}
+            </p>
           </div>
           <div>
-            <p className="text-gray-500 text-xs">ผู้รับหน้างาน</p>
+            <p className="text-gray-500 text-xs">{t.receiver}</p>
             <p className="text-gray-900 font-medium">{delivery.receiver_name || "-"}</p>
           </div>
           <div className="col-span-2">
-            <p className="text-gray-500 text-xs">สถานที่ส่ง</p>
+            <p className="text-gray-500 text-xs">{t.address}</p>
             <p className="text-gray-900 font-medium">{delivery.delivery_address || customer?.address || "-"}</p>
           </div>
         </div>
@@ -106,28 +132,31 @@ export default async function PrintDeliveryPage({
             <tr className="text-left text-gray-500 border-b border-gray-300">
               {!isNote && <th className="py-2 pr-2 font-medium w-8">✓</th>}
               <th className="py-2 pr-2 font-medium w-8">#</th>
-              <th className="py-2 pr-2 font-medium w-14"></th>
-              <th className="py-2 pr-2 font-medium">รายการสินค้า</th>
-              <th className="py-2 text-right font-medium">จำนวน</th>
+              <th className="py-2 pr-2 font-medium w-24"></th>
+              <th className="py-2 pr-2 font-medium">{t.item}</th>
+              <th className="py-2 text-right font-medium">{t.qty}</th>
             </tr>
           </thead>
           <tbody>
             {useCustomerLines &&
-              customerLines!.lines.map((l, idx) => (
-                <tr key={l.id} className="border-b border-gray-200 align-top">
-                  <td className="py-2.5 pr-2 text-gray-500">{idx + 1}</td>
-                  <td className="py-2.5 pr-2">
-                    {l.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={l.imageUrl} alt={l.label} className="w-14 h-14 rounded-md object-contain bg-gray-50 border border-gray-100" />
-                    ) : null}
-                  </td>
-                  <td className="py-2.5 pr-2 text-gray-900">{l.label}</td>
-                  <td className="py-2.5 text-right font-medium whitespace-nowrap">
-                    {l.quantity} {l.unit}
-                  </td>
-                </tr>
-              ))}
+              customerLines!.lines.map((l, idx) => {
+                const label = lang === "en" && l.labelEn ? l.labelEn : l.label;
+                return (
+                  <tr key={l.id} className="border-b border-gray-200 align-top">
+                    <td className="py-2.5 pr-2 text-gray-500">{idx + 1}</td>
+                    <td className="py-2.5 pr-2">
+                      {l.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={l.imageUrl} alt={label} className="w-20 h-20 rounded-md object-contain bg-gray-50 border border-gray-100" />
+                      ) : null}
+                    </td>
+                    <td className="py-2.5 pr-2 text-gray-900">{label}</td>
+                    <td className="py-2.5 text-right font-medium whitespace-nowrap">
+                      {l.quantity} {unitLabel(l.unit, l.quantity, lang)}
+                    </td>
+                  </tr>
+                );
+              })}
             {rows.map((i, idx) => (
               <tr key={i.id} className="border-b border-gray-200 align-top">
                 {!isNote && (
@@ -139,56 +168,58 @@ export default async function PrintDeliveryPage({
                 <td className="py-2.5 pr-2">
                   {productImage(i) ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={productImage(i)!} alt={itemName(i)} className="w-12 h-12 rounded-md object-contain bg-gray-50 border border-gray-100" />
+                    <img src={productImage(i)!} alt={itemName(i)} className="w-20 h-20 rounded-md object-contain bg-gray-50 border border-gray-100" />
                   ) : null}
                 </td>
                 <td className="py-2.5 pr-2 text-gray-900">
                   {itemName(i)}
                   {i.products_mf?.model && <span className="text-gray-500"> · {i.products_mf.model}</span>}
                   {isCustom(i) && (
-                    <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-100 text-yellow-800 align-middle">สั่งทำ</span>
+                    <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-100 text-yellow-800 align-middle">{t.madeToOrder}</span>
                   )}
-                  {i.custom_source && <p className="text-xs text-gray-500">แหล่งที่มา: {i.custom_source}</p>}
+                  {i.custom_source && (
+                    <p className="text-xs text-gray-500">
+                      {t.source} {i.custom_source}
+                    </p>
+                  )}
                   {i.item_note && <p className="text-xs text-gray-600">{i.item_note}</p>}
                   {(i.image_paths ?? []).length > 0 && (
                     <div className="flex gap-2 mt-1">
                       {(i.image_paths as string[]).map((path) =>
                         photoUrls.get(path) ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img key={path} src={photoUrls.get(path)} alt="รูปรายการ" className="w-20 h-20 rounded-md object-cover border border-gray-200" />
+                          <img key={path} src={photoUrls.get(path)} alt={t.photoAlt} className="w-24 h-24 rounded-md object-cover border border-gray-200" />
                         ) : null
                       )}
                     </div>
                   )}
                 </td>
                 <td className="py-2.5 text-right font-medium whitespace-nowrap">
-                  {i.shownQty} {itemUnit(i)}
+                  {i.shownQty} {unitLabel(itemUnit(i), i.shownQty, lang)}
                 </td>
               </tr>
             ))}
           </tbody>
           <tfoot>
             <tr>
-              <td colSpan={isNote ? 3 : 4} className="py-2 text-right text-gray-500">รวม</td>
-              <td className="py-2 text-right font-bold text-gray-900 whitespace-nowrap">{totalQty} ชิ้น</td>
+              <td colSpan={isNote ? 3 : 4} className="py-2 text-right text-gray-500">{t.total}</td>
+              <td className="py-2 text-right font-bold text-gray-900 whitespace-nowrap">
+                {totalQty} {unitLabel("ชิ้น", totalQty, lang)}
+              </td>
             </tr>
           </tfoot>
         </table>
 
         {delivery.note && (
           <p className="text-sm text-gray-700 mb-4">
-            <span className="text-gray-500">หมายเหตุ:</span> {delivery.note}
+            <span className="text-gray-500">{t.note}</span> {delivery.note}
           </p>
         )}
 
-        {isNote && (
-          <p className="text-sm text-gray-700 mb-2">
-            ข้าพเจ้าได้ตรวจรับสินค้าตามรายการข้างต้นครบถ้วนในสภาพเรียบร้อยแล้ว
-          </p>
-        )}
+        {isNote && <p className="text-sm text-gray-700 mb-2">{t.received}</p>}
 
         <div className="mb-8 mt-6">
-          <p className="text-xs text-gray-500 mb-2">หมายเหตุเพิ่มเติม</p>
+          <p className="text-xs text-gray-500 mb-2">{t.extraNote}</p>
           <div className="border-b border-gray-300 h-9" />
           <div className="border-b border-gray-300 h-9" />
         </div>
@@ -196,19 +227,19 @@ export default async function PrintDeliveryPage({
         <div className="grid grid-cols-2 gap-8 text-sm mt-12 break-inside-avoid">
           {isNote ? (
             <>
-              <SignatureBlock label="ผู้ส่งสินค้า" />
-              <SignatureBlock label="ผู้รับสินค้า (ลูกค้า)" />
+              <SignatureBlock label={t.sender} lang={lang} />
+              <SignatureBlock label={t.customerSign} lang={lang} />
             </>
           ) : (
             <>
-              <SignatureBlock label="ผู้จัดของ" />
-              <SignatureBlock label="ผู้ตรวจสอบ" />
+              <SignatureBlock label={t.picker} lang={lang} />
+              <SignatureBlock label={t.checker} lang={lang} />
             </>
           )}
         </div>
 
         <p className="text-[10px] text-gray-500 text-center mt-10">
-          พิมพ์เมื่อ {formatDate(new Date().toISOString())} โดย {printerName ?? "-"}
+          {t.printedOn} {printedOn} {t.by} {printerName ?? "-"}
         </p>
       </div>
 
