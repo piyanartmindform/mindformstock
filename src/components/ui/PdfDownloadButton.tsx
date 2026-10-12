@@ -132,7 +132,7 @@ export function PdfDownloadButton({
         : null;
       const LETTER_GAP = 14; // css px of space between the repeated header and the page content
 
-      const scale = Math.min(2.5, 1800 / width);
+      const scale = Math.min(3, 2400 / width);
       const render = (options: { y?: number; height?: number }) =>
         html2canvas(clone, { scale, useCORS: true, backgroundColor: "#ffffff", logging: false, ...options });
 
