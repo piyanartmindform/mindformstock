@@ -196,13 +196,25 @@ export default async function PrintDeliveryPage({
                   {productImage(i) ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={productImage(i)!} alt={itemName(i)} className="h-24 w-24 rounded-lg border border-slate-100 bg-slate-50 object-contain sm:h-28 sm:w-28" />
-                  ) : null}
+                  ) : (
+                    // no catalogue picture (made-to-order line): the attached photos take the picture column
+                    <div className="flex flex-col gap-1.5">
+                      {((i.image_paths ?? []) as string[]).map((path) =>
+                        photoUrls.get(path) ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img key={path} src={photoUrls.get(path)} alt={t.photoAlt} className="h-24 w-24 rounded-lg border border-slate-100 bg-slate-50 object-contain sm:h-28 sm:w-28" />
+                        ) : null
+                      )}
+                    </div>
+                  )}
                 </td>
                 <td className="py-2.5 pr-2 text-gray-900">
                   {itemName(i)}
                   {i.products_mf?.model && <span className="text-gray-500"> · {i.products_mf.model}</span>}
                   {isCustom(i) && (
-                    <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-100 text-yellow-800 align-middle">{t.madeToOrder}</span>
+                    <p className="mt-1">
+                      <span data-pdf-badge className="inline-block rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] leading-4 text-yellow-800">{t.madeToOrder}</span>
+                    </p>
                   )}
                   {i.custom_source && (
                     <p className="text-xs text-gray-500">
@@ -210,7 +222,7 @@ export default async function PrintDeliveryPage({
                     </p>
                   )}
                   {i.item_note && <p className="text-xs text-gray-600">{i.item_note}</p>}
-                  {(i.image_paths ?? []).length > 0 && (
+                  {productImage(i) && (i.image_paths ?? []).length > 0 && (
                     <div className="flex gap-2 mt-1">
                       {(i.image_paths as string[]).map((path) =>
                         photoUrls.get(path) ? (

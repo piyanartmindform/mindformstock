@@ -75,6 +75,13 @@ export function PdfDownloadButton({
       clone.style.margin = "0";
       // side margin as a share of the width (5.5% of 210 mm = about 11.5 mm), small top / bottom
       clone.style.padding = "18px 5.5%";
+      // html2canvas draws Thai text a few px lower than the browser does, so small pill badges
+      // lose their text off the bottom edge: lift the text inside the pill (same pill height)
+      clone.querySelectorAll<HTMLElement>("[data-pdf-badge]").forEach((el) => {
+        el.style.paddingTop = "0px";
+        el.style.paddingBottom = "5px";
+        el.style.lineHeight = "14px";
+      });
       holder.appendChild(clone);
       document.body.appendChild(holder);
 
