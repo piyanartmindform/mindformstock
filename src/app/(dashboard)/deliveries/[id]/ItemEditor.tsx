@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmDialog } from "@/components/ui/confirmDialog";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -74,7 +75,7 @@ export function ItemEditor({ item, orderedIds }: { item: EditableItem; orderedId
   }
 
   async function remove() {
-    if (!confirm("ลบรายการนี้ออกจากรอบส่ง? (รูปที่แนบไว้จะไม่ถูกใช้อีก)")) return;
+    if (!(await confirmDialog("ลบรายการนี้ออกจากรอบส่ง? (รูปที่แนบไว้จะไม่ถูกใช้อีก)", "ลบ"))) return;
     setBusy(true);
     const { error: err } = await createClient().from("delivery_items_mf").delete().eq("id", item.id);
     setBusy(false);

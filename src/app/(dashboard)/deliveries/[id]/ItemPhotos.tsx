@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmDialog } from "@/components/ui/confirmDialog";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -52,7 +53,7 @@ export function ItemPhotos({
   }
 
   async function remove(path: string) {
-    if (!confirm("ลบรูปนี้?")) return;
+    if (!(await confirmDialog("ลบรูปนี้?", "ลบ"))) return;
     setBusy(true);
     const err = await save(photos.filter((p) => p.path !== path).map((p) => p.path));
     if (err) setError(err.message);

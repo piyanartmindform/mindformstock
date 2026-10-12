@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmDialog } from "@/components/ui/confirmDialog";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -27,6 +28,7 @@ export interface PrepLine {
 }
 
 const field = "h-12 w-full rounded-xl border border-gray-300 bg-white px-3 text-base";
+const area = "w-full rounded-xl border border-gray-300 bg-white px-3 py-3 text-base";
 const btn =
   "inline-flex items-center justify-center h-8 px-2.5 rounded-lg border text-xs font-medium disabled:opacity-50";
 
@@ -180,7 +182,7 @@ export function CustomerItemsEditor({
   }
 
   async function remove(item: CustomerItem) {
-    if (!confirm(`ลบ "${item.label}" ออกจากใบส่งงานลูกค้า? (ชิ้นที่ผูกไว้จะกลับไปแสดงแยกเป็นรายชิ้น)`)) return;
+    if (!(await confirmDialog(`ลบ "${item.label}" ออกจากใบส่งงานลูกค้า? (ชิ้นที่ผูกไว้จะกลับไปแสดงแยกเป็นรายชิ้น)`, "ลบ"))) return;
     setBusy(true);
     const supabase = createClient();
     const { error: err } = await supabase.from("delivery_customer_items_mf").delete().eq("id", item.id);
@@ -192,8 +194,8 @@ export function CustomerItemsEditor({
 
   const form = (
     <div className="space-y-2 rounded-xl border border-gray-200 bg-gray-50 p-3">
-      <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="ชื่อที่ลูกค้าเห็น เช่น โต๊ะ 4 ที่นั่ง มีสกรีน" aria-label="ชื่อรายการสำหรับลูกค้า" className={field} />
-      <input value={labelEn} onChange={(e) => setLabelEn(e.target.value)} placeholder="ชื่อภาษาอังกฤษ (ไม่บังคับ ใช้ในใบส่งงานเวอร์ชันอังกฤษ)" aria-label="ชื่อภาษาอังกฤษ" className={field} />
+      <textarea rows={3} value={label} onChange={(e) => setLabel(e.target.value)} placeholder="ชื่อที่ลูกค้าเห็น เช่น โต๊ะ 4 ที่นั่ง มีสกรีน (กด Enter เพื่อขึ้นบรรทัดใหม่ได้)" aria-label="ชื่อรายการสำหรับลูกค้า" className={area} />
+      <textarea rows={3} value={labelEn} onChange={(e) => setLabelEn(e.target.value)} placeholder="ชื่อภาษาอังกฤษ (ไม่บังคับ ใช้ในใบส่งงานเวอร์ชันอังกฤษ)" aria-label="ชื่อภาษาอังกฤษ" className={area} />
       <div className="flex gap-2">
         <input type="number" inputMode="numeric" min="1" value={qty} onChange={(e) => setQty(e.target.value)} aria-label="จำนวน" className={`${field} text-right`} />
         <input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="หน่วย" aria-label="หน่วย" className={field} />
@@ -294,8 +296,8 @@ export function CustomerItemsEditor({
             )}
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
-                <p className="font-medium text-gray-900">{item.label}</p>
-                {item.labelEn && <p className="text-xs text-gray-500">EN: {item.labelEn}</p>}
+                <p className="font-medium text-gray-900 whitespace-pre-line">{item.label}</p>
+                {item.labelEn && <p className="text-xs text-gray-500 whitespace-pre-line">EN: {item.labelEn}</p>}
                 <span className="font-medium whitespace-nowrap">{item.quantity} {item.unit}</span>
               </div>
               <p className="text-xs text-gray-500 mt-0.5">

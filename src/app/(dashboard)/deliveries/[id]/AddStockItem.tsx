@@ -10,13 +10,14 @@ export interface AvailableItem {
   name: string;
   model: string | null;
   unit: string;
+  project: string | null;
   max: number;
   closed: boolean;
 }
 
 const field = "h-12 w-full rounded-xl border border-gray-300 bg-white px-3 text-base";
 
-// Add a stock product (from this customer/project's expected items) to an existing round.
+// Add a stock product (from this customer's expected items, any project) to an existing round.
 export function AddStockItem({ deliveryId, available }: { deliveryId: string; available: AvailableItem[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -72,7 +73,7 @@ export function AddStockItem({ deliveryId, available }: { deliveryId: string; av
       >
         {available.map((a) => (
           <option key={a.expectedId} value={a.expectedId}>
-            {a.name}{a.model ? ` · ${a.model}` : ""} (เหลือ {a.max} {a.unit}){a.closed ? " · ปิดแล้ว" : ""}
+            {a.name}{a.model ? ` · ${a.model}` : ""} (เหลือ {a.max} {a.unit}){a.project ? ` · โปรเจค ${a.project}` : ""}{a.closed ? " · ปิดแล้ว" : ""}
           </option>
         ))}
       </select>

@@ -61,10 +61,9 @@ export default async function DeliveryDetailPage({ params }: { params: { id: str
   if (canEditItems) {
     let q = supabase
       .from("stock_out_expected_mf")
-      .select("id, product_id, expected_quantity, status, products_mf(name, model, unit)")
+      .select("id, product_id, expected_quantity, status, project_name, products_mf(name, model, unit)")
       .eq("customer_name", delivery.customer_name)
       .order("created_at", { ascending: true });
-    q = delivery.project_name ? q.eq("project_name", delivery.project_name) : q.is("project_name", null);
     const { data: candidates } = await q;
     const inThisRound = new Set(expectedIds);
     const candidateIds = (candidates ?? []).map((c: any) => c.id).filter((id: string) => !inThisRound.has(id));
@@ -84,6 +83,7 @@ export default async function DeliveryDetailPage({ params }: { params: { id: str
         name: c.products_mf?.name ?? "-",
         model: c.products_mf?.model ?? null,
         unit: c.products_mf?.unit ?? "",
+        project: c.project_name ?? null,
         max: c.expected_quantity - (plannedAll.get(c.id) ?? 0),
         closed: c.status === "closed",
       }))

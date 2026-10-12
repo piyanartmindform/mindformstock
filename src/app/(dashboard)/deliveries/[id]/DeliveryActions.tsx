@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmDialog } from "@/components/ui/confirmDialog";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -48,10 +49,10 @@ export function DeliveryActions({
     router.refresh();
   }
 
-  function advance() {
+  async function advance() {
     if (!next) return;
-    if (next === "delivered" && photoCount === 0 && !confirm("ยังไม่ได้แนบรูปใบส่งงานที่ลูกค้าเซ็น ต้องการเปลี่ยนเป็น \"ส่งมอบแล้ว\" เลยไหม?")) return;
-    if (next === "scheduled" && !details.scheduled_date && !confirm("ยังไม่ได้ระบุวันนัดส่ง ต้องการเปลี่ยนเป็น \"นัดส่งแล้ว\" เลยไหม?")) return;
+    if (next === "delivered" && photoCount === 0 && !(await confirmDialog("ยังไม่ได้แนบรูปใบส่งงานที่ลูกค้าเซ็น ต้องการเปลี่ยนเป็น \"ส่งมอบแล้ว\" เลยไหม?"))) return;
+    if (next === "scheduled" && !details.scheduled_date && !(await confirmDialog("ยังไม่ได้ระบุวันนัดส่ง ต้องการเปลี่ยนเป็น \"นัดส่งแล้ว\" เลยไหม?"))) return;
     const col = STATUS_DATE_COLUMN[next]!;
     run(async () => {
       const { error } = await createClient()
@@ -62,9 +63,9 @@ export function DeliveryActions({
     });
   }
 
-  function revert() {
+  async function revert() {
     if (!prev) return;
-    if (!confirm(`ย้อนสถานะกลับเป็น "${STATUS_LABEL[prev]}"?`)) return;
+    if (!(await confirmDialog(`ย้อนสถานะกลับเป็น "${STATUS_LABEL[prev]}"?`))) return;
     const col = STATUS_DATE_COLUMN[status];
     run(async () => {
       const { error } = await createClient()
@@ -117,7 +118,7 @@ export function DeliveryActions({
   }
 
   async function remove() {
-    if (!confirm("ลบรอบส่งนี้? ลบแล้วกู้คืนไม่ได้")) return;
+    if (!(await confirmDialog("ลบรอบส่งนี้? ลบแล้วกู้คืนไม่ได้", "ลบ"))) return;
     setBusy(true);
     const { error } = await createClient().from("deliveries_mf").delete().eq("id", id);
     if (error) { setError(error.message); setBusy(false); return; }

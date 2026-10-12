@@ -177,7 +177,7 @@ export default async function PrintDeliveryPage({
                         <img src={l.imageUrl} alt={label} className="h-24 w-24 rounded-lg border border-slate-100 bg-slate-50 object-contain sm:h-28 sm:w-28" />
                       ) : null}
                     </td>
-                    <td className="py-2.5 pr-2 text-gray-900">{label}</td>
+                    <td className="py-2.5 pr-2 text-gray-900 whitespace-pre-line">{label}</td>
                     <td className="py-2.5 text-right font-medium whitespace-nowrap">
                       {l.quantity} {unitLabel(l.unit, l.quantity, lang)}
                     </td>
