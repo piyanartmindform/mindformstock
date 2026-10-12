@@ -17,6 +17,7 @@ interface Details {
   delivery_address: string;
   receiver_name: string;
   receiver_phone: string;
+  po_number: string;
   note: string;
 }
 
@@ -84,6 +85,7 @@ export function DeliveryActions({
           delivery_address: details.delivery_address || null,
           receiver_name: details.receiver_name || null,
           receiver_phone: details.receiver_phone || null,
+          ...(details.po_number !== initial.po_number ? { po_number: details.po_number.trim() || null } : {}),
           note: details.note || null,
         })
         .eq("id", id);
@@ -159,6 +161,14 @@ export function DeliveryActions({
               value={details.delivery_address}
               onChange={(e) => setDetails({ ...details, delivery_address: e.target.value })}
               className="mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base"
+            />
+          </label>
+          <label className="block text-sm text-gray-700">
+            เลขที่ PO อ้างอิง
+            <input
+              value={details.po_number}
+              onChange={(e) => setDetails({ ...details, po_number: e.target.value })}
+              className="mt-1 h-12 w-full rounded-xl border border-gray-300 bg-white px-4 text-base"
             />
           </label>
           <label className="block text-sm text-gray-700">

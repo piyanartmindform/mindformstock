@@ -87,6 +87,7 @@ export function NewDeliveryForm({
         delivery_address: fd.get("delivery_address") || null,
         receiver_name: fd.get("receiver_name") || null,
         receiver_phone: fd.get("receiver_phone") || null,
+        ...(fd.get("po_number") ? { po_number: String(fd.get("po_number")).trim() } : {}),
         note: fd.get("note") || null,
         created_by: user?.id ?? null,
       })
@@ -261,6 +262,7 @@ export function NewDeliveryForm({
         </button>
       </div>
 
+      <Input label="เลขที่ PO อ้างอิง" name="po_number" placeholder="เลข PO ของลูกค้า (ถ้ามี)" />
       <Input label="วันนัดส่ง/ติดตั้ง" name="scheduled_date" type="date" />
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium text-gray-700">ที่อยู่ส่ง</label>

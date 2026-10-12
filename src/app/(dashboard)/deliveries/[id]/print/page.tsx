@@ -125,6 +125,12 @@ export default async function PrintDeliveryPage({
                 {t.project.replace(":", "")}
               </p>
               <p className="mt-1 font-semibold text-slate-900">{delivery.project_name ?? "-"}</p>
+              {delivery.po_number && (
+                <>
+                  <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-700">{t.poNo}</p>
+                  <p className="mt-1 font-semibold text-slate-900">{delivery.po_number}</p>
+                </>
+              )}
             </div>
           </div>
         </div>
