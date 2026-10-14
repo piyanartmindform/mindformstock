@@ -19,6 +19,7 @@ interface Details {
   receiver_name: string;
   receiver_phone: string;
   po_number: string;
+  project_name: string;
   note: string;
 }
 
@@ -87,6 +88,7 @@ export function DeliveryActions({
           receiver_name: details.receiver_name || null,
           receiver_phone: details.receiver_phone || null,
           ...(details.po_number !== initial.po_number ? { po_number: details.po_number.trim() || null } : {}),
+          project_name: details.project_name.trim() || null,
           note: details.note || null,
         })
         .eq("id", id);
@@ -162,6 +164,14 @@ export function DeliveryActions({
               value={details.delivery_address}
               onChange={(e) => setDetails({ ...details, delivery_address: e.target.value })}
               className="mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base"
+            />
+          </label>
+          <label className="block text-sm text-gray-700">
+            ชื่อโปรเจค
+            <input
+              value={details.project_name}
+              onChange={(e) => setDetails({ ...details, project_name: e.target.value })}
+              className="mt-1 h-12 w-full rounded-xl border border-gray-300 bg-white px-4 text-base"
             />
           </label>
           <label className="block text-sm text-gray-700">
