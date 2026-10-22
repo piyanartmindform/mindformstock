@@ -159,7 +159,7 @@ export default async function PrintDeliveryPage({
             <tr data-pdf-block className="border-b border-slate-200 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               {!isNote && <th className="py-2 pr-2 font-medium w-8">✓</th>}
               <th className="py-2 pr-2 font-medium w-8">#</th>
-              <th className="py-2 pr-2 font-medium w-32"></th>
+              <th className="py-2 pr-2 font-medium w-24"></th>
               <th className="py-2 pr-2 font-medium">{t.item}</th>
               <th className="py-2 text-right font-medium">{t.qty}</th>
             </tr>
@@ -174,7 +174,7 @@ export default async function PrintDeliveryPage({
                     <td className="py-2.5 pr-2">
                       {l.imageUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={l.imageUrl} alt={label} className="h-24 w-24 rounded-lg border border-slate-100 bg-slate-50 object-contain sm:h-28 sm:w-28" />
+                        <img src={l.imageUrl} alt={label} className="h-20 w-20 rounded-lg border border-slate-100 bg-slate-50 object-contain" />
                       ) : null}
                     </td>
                     <td className="py-2.5 pr-2 text-gray-900 whitespace-pre-line">{label}</td>
@@ -195,14 +195,14 @@ export default async function PrintDeliveryPage({
                 <td className="py-2.5 pr-2">
                   {productImage(i) ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={productImage(i)!} alt={itemName(i)} className="h-24 w-24 rounded-lg border border-slate-100 bg-slate-50 object-contain sm:h-28 sm:w-28" />
+                    <img src={productImage(i)!} alt={itemName(i)} className="h-20 w-20 rounded-lg border border-slate-100 bg-slate-50 object-contain" />
                   ) : (
                     // no catalogue picture (made-to-order line): the attached photos take the picture column
                     <div className="flex flex-col gap-1.5">
                       {((i.image_paths ?? []) as string[]).map((path) =>
                         photoUrls.get(path) ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img key={path} src={photoUrls.get(path)} alt={t.photoAlt} className="h-24 w-24 rounded-lg border border-slate-100 bg-slate-50 object-contain sm:h-28 sm:w-28" />
+                          <img key={path} src={photoUrls.get(path)} alt={t.photoAlt} className="h-20 w-20 rounded-lg border border-slate-100 bg-slate-50 object-contain" />
                         ) : null
                       )}
                     </div>
@@ -227,7 +227,7 @@ export default async function PrintDeliveryPage({
                       {(i.image_paths as string[]).map((path) =>
                         photoUrls.get(path) ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img key={path} src={photoUrls.get(path)} alt={t.photoAlt} className="h-24 w-24 rounded-lg border border-slate-200 object-cover sm:h-28 sm:w-28" />
+                          <img key={path} src={photoUrls.get(path)} alt={t.photoAlt} className="h-20 w-20 rounded-lg border border-slate-200 object-cover" />
                         ) : null
                       )}
                     </div>
@@ -263,13 +263,13 @@ export default async function PrintDeliveryPage({
           </div>
         )}
 
-        <div data-pdf-block className="mb-8 mt-5">
+        <div data-pdf-block className="mb-5 mt-3">
           <p className="text-xs text-gray-500 mb-2">{t.extraNote}</p>
-          <div className="border-b border-gray-300 h-9" />
-          <div className="border-b border-gray-300 h-9" />
+          <div className="border-b border-gray-300 h-7" />
+          <div className="border-b border-gray-300 h-7" />
         </div>
 
-        <div data-pdf-block className="mt-10 grid grid-cols-2 gap-4 break-inside-avoid text-xs sm:gap-8">
+        <div data-pdf-block className="mt-6 grid grid-cols-2 gap-4 break-inside-avoid text-xs sm:gap-8">
           {isNote ? (
             <>
               <div className="rounded-xl border border-slate-200 p-4"><SignatureBlock label={t.sender} lang={lang} /></div>
@@ -283,7 +283,7 @@ export default async function PrintDeliveryPage({
           )}
         </div>
 
-        <div data-pdf-block className="mt-10 border-t border-slate-200 pt-3 text-center">
+        <div data-pdf-block className="mt-6 border-t border-slate-200 pt-3 text-center">
           <p className="text-[10px] text-slate-500">{t.printedOn} {printedOn} {t.by} {printerName ?? "-"}</p>
           <p className="mt-1 text-[9px] font-medium tracking-[0.18em] text-brand-700">MINDFORM · BUILT FOR BETTER WORK</p>
         </div>
