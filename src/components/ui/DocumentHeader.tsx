@@ -6,19 +6,21 @@ export function DocumentHeader({
   issuedAt,
   docNo,
   lang = "th",
+  compact = false,
 }: {
   title: string;
   issuedAt: string;
   docNo?: string;
   lang?: DocLang;
+  compact?: boolean;
 }) {
   const t = docText(lang);
   return (
-    <div data-pdf-block data-pdf-letterhead className="flex items-start justify-between gap-4 border-b-2 border-brand pb-4 mb-6">
+    <div data-pdf-block data-pdf-letterhead className={`flex items-start justify-between gap-4 border-b-2 border-brand ${compact ? "pb-3 mb-4" : "pb-4 mb-6"}`}>
       <div className="min-w-0">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo.png" alt="MINDFORM" className="h-6 w-auto" />
-        <div className="mt-2 text-xs text-gray-600 leading-relaxed">
+        <img src="/logo.png" alt="MINDFORM" className={`${compact ? "h-5" : "h-6"} w-auto`} />
+        <div className={`${compact ? "mt-1 leading-normal" : "mt-2 leading-relaxed"} text-xs text-gray-600`}>
           {lang === "en" ? (
             <>
               <p className="font-bold text-gray-900 text-sm">{COMPANY.nameEn}</p>
@@ -42,7 +44,7 @@ export function DocumentHeader({
             {t.docNo} {docNo}
           </p>
         )}
-        <p className="text-gray-500 text-xs mt-2">{t.issued}</p>
+        <p className={`text-gray-500 text-xs ${compact ? "mt-1" : "mt-2"}`}>{t.issued}</p>
         <p className="text-gray-900 font-medium text-sm">{formatDocDate(issuedAt, lang)}</p>
       </div>
     </div>

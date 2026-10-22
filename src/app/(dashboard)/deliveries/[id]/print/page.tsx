@@ -104,6 +104,7 @@ export default async function PrintDeliveryPage({
           docNo={delivery.doc_no}
           issuedAt={new Date().toISOString()}
           lang={lang}
+          compact
         />
 
         <div data-pdf-block className="relative mb-4 overflow-hidden rounded-xl border border-brand-200 bg-brand-50/50 p-4 pl-5 text-[13px]">
@@ -174,7 +175,7 @@ export default async function PrintDeliveryPage({
                     <td className="py-2.5 pr-2">
                       {l.imageUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={l.imageUrl} alt={label} className="h-20 w-20 rounded-lg border border-slate-100 bg-slate-50 object-contain" />
+                        <img src={l.imageUrl} alt={label} className="h-14 w-20 rounded-lg border border-slate-100 bg-slate-50 object-contain" />
                       ) : null}
                     </td>
                     <td className="py-2.5 pr-2 text-gray-900 whitespace-pre-line">{label}</td>
@@ -195,14 +196,14 @@ export default async function PrintDeliveryPage({
                 <td className="py-2.5 pr-2">
                   {productImage(i) ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={productImage(i)!} alt={itemName(i)} className="h-20 w-20 rounded-lg border border-slate-100 bg-slate-50 object-contain" />
+                    <img src={productImage(i)!} alt={itemName(i)} className="h-14 w-20 rounded-lg border border-slate-100 bg-slate-50 object-contain" />
                   ) : (
                     // no catalogue picture (made-to-order line): the attached photos take the picture column
                     <div className="flex flex-col gap-1.5">
                       {((i.image_paths ?? []) as string[]).map((path) =>
                         photoUrls.get(path) ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img key={path} src={photoUrls.get(path)} alt={t.photoAlt} className="h-20 w-20 rounded-lg border border-slate-100 bg-slate-50 object-contain" />
+                          <img key={path} src={photoUrls.get(path)} alt={t.photoAlt} className="h-14 w-20 rounded-lg border border-slate-100 bg-slate-50 object-contain" />
                         ) : null
                       )}
                     </div>
@@ -227,7 +228,7 @@ export default async function PrintDeliveryPage({
                       {(i.image_paths as string[]).map((path) =>
                         photoUrls.get(path) ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img key={path} src={photoUrls.get(path)} alt={t.photoAlt} className="h-20 w-20 rounded-lg border border-slate-200 object-cover" />
+                          <img key={path} src={photoUrls.get(path)} alt={t.photoAlt} className="h-14 w-20 rounded-lg border border-slate-200 object-contain" />
                         ) : null
                       )}
                     </div>
@@ -272,13 +273,13 @@ export default async function PrintDeliveryPage({
         <div data-pdf-block className="mt-6 grid grid-cols-2 gap-4 break-inside-avoid text-xs sm:gap-8">
           {isNote ? (
             <>
-              <div className="rounded-xl border border-slate-200 p-4"><SignatureBlock label={t.sender} lang={lang} /></div>
-              <div className="rounded-xl border border-brand-200 bg-brand-50/30 p-4"><SignatureBlock label={t.customerSign} lang={lang} /></div>
+              <div className="rounded-xl border border-slate-200 p-3"><SignatureBlock label={t.sender} lang={lang} compact /></div>
+              <div className="rounded-xl border border-brand-200 bg-brand-50/30 p-3"><SignatureBlock label={t.customerSign} lang={lang} compact /></div>
             </>
           ) : (
             <>
-              <div className="rounded-xl border border-slate-200 p-4"><SignatureBlock label={t.picker} lang={lang} /></div>
-              <div className="rounded-xl border border-slate-200 p-4"><SignatureBlock label={t.checker} lang={lang} /></div>
+              <div className="rounded-xl border border-slate-200 p-3"><SignatureBlock label={t.picker} lang={lang} compact /></div>
+              <div className="rounded-xl border border-slate-200 p-3"><SignatureBlock label={t.checker} lang={lang} compact /></div>
             </>
           )}
         </div>
