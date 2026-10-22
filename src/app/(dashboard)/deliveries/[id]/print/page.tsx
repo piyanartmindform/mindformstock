@@ -107,7 +107,7 @@ export default async function PrintDeliveryPage({
           compact
         />
 
-        <div data-pdf-block className="relative mb-4 overflow-hidden rounded-xl border border-brand-200 bg-brand-50/50 p-4 pl-5 text-[13px]">
+        <div data-pdf-block className="relative mb-3 overflow-hidden rounded-xl border border-brand-200 bg-brand-50/50 p-3 pl-4 text-[13px]">
           <div className="absolute inset-y-0 left-0 w-1.5 bg-brand" />
           <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
             <div className="min-w-0 space-y-1">
@@ -136,25 +136,25 @@ export default async function PrintDeliveryPage({
           </div>
         </div>
 
-        <div data-pdf-block className="mb-6 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-slate-200 bg-slate-200 text-[13px] sm:grid-cols-[0.9fr_1.1fr_2fr]">
-          <div className="bg-white p-3">
+        <div data-pdf-block className="mb-4 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-slate-200 bg-slate-200 text-[13px] sm:grid-cols-[0.9fr_1.1fr_2fr]">
+          <div className="bg-white p-2">
             <p className="text-[11px] text-slate-500">{t.scheduled}</p>
             <p className="mt-1 font-semibold text-slate-900">
               {delivery.scheduled_date ? formatDocDate(delivery.scheduled_date, lang) : "-"}
             </p>
           </div>
-          <div className="bg-white p-3">
+          <div className="bg-white p-2">
             <p className="text-[11px] text-slate-500">{t.receiver}</p>
             <p className="mt-1 font-semibold text-slate-900">{delivery.receiver_name || "-"}</p>
             {delivery.receiver_phone && <p className="mt-0.5 text-xs text-slate-500">{t.phone} {delivery.receiver_phone}</p>}
           </div>
-          <div className="col-span-2 bg-white p-3 sm:col-span-1">
+          <div className="col-span-2 bg-white p-2 sm:col-span-1">
             <p className="text-[11px] text-slate-500">{t.address}</p>
             <p className="mt-1 font-semibold leading-snug text-slate-900">{delivery.delivery_address || customer?.address || "-"}</p>
           </div>
         </div>
 
-        <div className="mb-4 overflow-hidden">
+        <div className="mb-3 overflow-hidden">
           <table className="w-full text-[13px]">
           <thead className="bg-slate-50">
             <tr data-pdf-block className="border-b border-slate-200 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500">
@@ -252,25 +252,25 @@ export default async function PrintDeliveryPage({
         </div>
 
         {delivery.note && (
-          <div data-pdf-block className="mb-3 py-2 text-[13px] text-slate-700">
+          <div data-pdf-block className="mb-2 py-1 text-[13px] text-slate-700">
             <span className="font-semibold text-amber-800">{t.note}</span> {delivery.note}
           </div>
         )}
 
         {isNote && (
-          <div data-pdf-block className="mb-4 flex gap-3 py-2 text-[13px] text-slate-700">
+          <div data-pdf-block className="mb-2 flex gap-3 py-1 text-[13px] text-slate-700">
             <span className="mt-0.5 inline-block h-4 w-4 shrink-0 rounded border border-slate-400 bg-white" />
             <p>{t.received}</p>
           </div>
         )}
 
-        <div data-pdf-block className="mb-5 mt-3">
+        <div data-pdf-block className="mb-3 mt-2">
           <p className="text-xs text-gray-500 mb-2">{t.extraNote}</p>
-          <div className="border-b border-gray-300 h-7" />
-          <div className="border-b border-gray-300 h-7" />
+          <div className="border-b border-gray-300 h-5" />
+          <div className="border-b border-gray-300 h-5" />
         </div>
 
-        <div data-pdf-block className="mt-6 grid grid-cols-2 gap-4 break-inside-avoid text-xs sm:gap-8">
+        <div data-pdf-block className="mt-3 grid grid-cols-2 gap-4 break-inside-avoid text-xs sm:gap-8">
           {isNote ? (
             <>
               <div className="rounded-xl border border-slate-200 p-3"><SignatureBlock label={t.sender} lang={lang} compact /></div>
@@ -284,7 +284,7 @@ export default async function PrintDeliveryPage({
           )}
         </div>
 
-        <div data-pdf-block className="mt-6 border-t border-slate-200 pt-3 text-center">
+        <div data-pdf-block className="mt-2 border-t border-slate-200 pt-2 text-center">
           <p className="text-[10px] text-slate-500">{t.printedOn} {printedOn} {t.by} {printerName ?? "-"}</p>
           <p className="mt-1 text-[9px] font-medium tracking-[0.18em] text-brand-700">MINDFORM · BUILT FOR BETTER WORK</p>
         </div>
