@@ -8,6 +8,15 @@ import { SignatureBlock } from "@/components/ui/SignatureBlock";
 import { docLang, docText, formatDocDate, unitLabel } from "@/lib/docI18n";
 import { ITEM_SELECT, applyItemOrder, getCustomerLines, getItemOrder, getItemPhotoUrls, isCustom, itemName, itemUnit, productImage, splitCustomerLabel } from "@/lib/deliveryItems";
 
+function DeliveryItemImage({ src, alt }: { src: string; alt: string }) {
+  return (
+    <div className="flex h-14 w-20 items-center justify-center overflow-hidden rounded-lg border border-slate-100 bg-slate-50">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src} alt={alt} className="h-auto max-h-full w-auto max-w-full" />
+    </div>
+  );
+}
+
 async function getPrinterName() {
   const user = await getAuthUser();
   if (!user) return null;
@@ -175,8 +184,7 @@ export default async function PrintDeliveryPage({
                     <td className="py-2.5 pr-2 text-gray-500">{idx + 1}</td>
                     <td className="py-2.5 pr-2">
                       {l.imageUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={l.imageUrl} alt={label} className="h-14 w-20 rounded-lg border border-slate-100 bg-slate-50 object-contain" />
+                        <DeliveryItemImage src={l.imageUrl} alt={label} />
                       ) : null}
                     </td>
                     <td className="py-2.5 pr-2 text-gray-900">
@@ -199,15 +207,13 @@ export default async function PrintDeliveryPage({
                 <td className="py-2.5 pr-2 text-gray-500">{(useCustomerLines ? customerLines!.lines.length : 0) + idx + 1}</td>
                 <td className="py-2.5 pr-2">
                   {productImage(i) ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={productImage(i)!} alt={itemName(i)} className="h-14 w-20 rounded-lg border border-slate-100 bg-slate-50 object-contain" />
+                    <DeliveryItemImage src={productImage(i)!} alt={itemName(i)} />
                   ) : (
                     // no catalogue picture (made-to-order line): the attached photos take the picture column
                     <div className="flex flex-col gap-1.5">
                       {((i.image_paths ?? []) as string[]).map((path) =>
                         photoUrls.get(path) ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img key={path} src={photoUrls.get(path)} alt={t.photoAlt} className="h-14 w-20 rounded-lg border border-slate-100 bg-slate-50 object-contain" />
+                          <DeliveryItemImage key={path} src={photoUrls.get(path)!} alt={t.photoAlt} />
                         ) : null
                       )}
                     </div>
@@ -231,8 +237,7 @@ export default async function PrintDeliveryPage({
                     <div className="flex gap-2 mt-1">
                       {(i.image_paths as string[]).map((path) =>
                         photoUrls.get(path) ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img key={path} src={photoUrls.get(path)} alt={t.photoAlt} className="h-14 w-20 rounded-lg border border-slate-200 object-contain" />
+                          <DeliveryItemImage key={path} src={photoUrls.get(path)!} alt={t.photoAlt} />
                         ) : null
                       )}
                     </div>
