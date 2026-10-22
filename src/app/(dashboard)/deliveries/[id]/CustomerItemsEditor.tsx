@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { resizeImage } from "@/lib/resizeImage";
+import { joinCustomerLabel, splitCustomerLabel } from "@/lib/deliveryItems";
 
 export interface CustomerItem {
   id: string;
@@ -51,7 +52,9 @@ export function CustomerItemsEditor({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [label, setLabel] = useState("");
+  const [details, setDetails] = useState("");
   const [labelEn, setLabelEn] = useState("");
+  const [detailsEn, setDetailsEn] = useState("");
   const [qty, setQty] = useState("1");
   const [unit, setUnit] = useState("ชุด");
   const [file, setFile] = useState<File | null>(null);
@@ -60,9 +63,13 @@ export function CustomerItemsEditor({
   const [picked, setPicked] = useState<Record<string, string>>({});
 
   function startEdit(item: CustomerItem | null) {
+    const th = splitCustomerLabel(item?.label ?? "");
+    const en = splitCustomerLabel(item?.labelEn ?? "");
     setEditingId(item ? item.id : "new");
-    setLabel(item?.label ?? "");
-    setLabelEn(item?.labelEn ?? "");
+    setLabel(th.name);
+    setDetails(th.details);
+    setLabelEn(en.name);
+    setDetailsEn(en.details);
     setQty(String(item?.quantity ?? 1));
     setUnit(item?.unit ?? "ชุด");
     setFile(null);
@@ -113,10 +120,12 @@ export function CustomerItemsEditor({
       // label_en is only written when there is something to write (or to clear), so saving
       // keeps working before delivery-customer-label-en.sql has been run
       const base = {
-        label: label.trim(),
+        label: joinCustomerLabel(label, details),
         quantity: q,
         unit: unit.trim() || null,
-        ...(labelEn.trim() || existing?.labelEn ? { label_en: labelEn.trim() || null } : {}),
+        ...(labelEn.trim() || detailsEn.trim() || existing?.labelEn
+          ? { label_en: joinCustomerLabel(labelEn, detailsEn) || null }
+          : {}),
       };
 
       if (!existing) {
@@ -194,8 +203,10 @@ export function CustomerItemsEditor({
 
   const form = (
     <div className="space-y-2 rounded-xl border border-gray-200 bg-gray-50 p-3">
-      <textarea rows={3} value={label} onChange={(e) => setLabel(e.target.value)} placeholder="ชื่อที่ลูกค้าเห็น เช่น โต๊ะ 4 ที่นั่ง มีสกรีน (กด Enter เพื่อขึ้นบรรทัดใหม่ได้)" aria-label="ชื่อรายการสำหรับลูกค้า" className={area} />
-      <textarea rows={3} value={labelEn} onChange={(e) => setLabelEn(e.target.value)} placeholder="ชื่อภาษาอังกฤษ (ไม่บังคับ ใช้ในใบส่งงานเวอร์ชันอังกฤษ)" aria-label="ชื่อภาษาอังกฤษ" className={area} />
+      <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="ชื่อสินค้า เช่น รางไฟ" aria-label="ชื่อรายการสำหรับลูกค้า" className={field} />
+      <textarea rows={2} value={details} onChange={(e) => setDetails(e.target.value)} placeholder="รายละเอียดเพิ่มเติม (ไม่บังคับ)" aria-label="รายละเอียดรายการสำหรับลูกค้า" className={area} />
+      <input value={labelEn} onChange={(e) => setLabelEn(e.target.value)} placeholder="ชื่อสินค้าภาษาอังกฤษ (ไม่บังคับ)" aria-label="ชื่อภาษาอังกฤษ" className={field} />
+      <textarea rows={2} value={detailsEn} onChange={(e) => setDetailsEn(e.target.value)} placeholder="รายละเอียดภาษาอังกฤษ (ไม่บังคับ)" aria-label="รายละเอียดภาษาอังกฤษ" className={area} />
       <div className="flex gap-2">
         <input type="number" inputMode="numeric" min="1" value={qty} onChange={(e) => setQty(e.target.value)} aria-label="จำนวน" className={`${field} text-right`} />
         <input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="หน่วย" aria-label="หน่วย" className={field} />
@@ -296,8 +307,11 @@ export function CustomerItemsEditor({
             )}
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
-                <p className="font-medium text-gray-900 whitespace-pre-line">{item.label}</p>
-                {item.labelEn && <p className="text-xs text-gray-500 whitespace-pre-line">EN: {item.labelEn}</p>}
+                <div className="min-w-0">
+                  <p className="font-medium text-gray-900">{splitCustomerLabel(item.label).name}</p>
+                  {splitCustomerLabel(item.label).details && <p className="mt-0.5 text-xs text-gray-600 whitespace-pre-line">{splitCustomerLabel(item.label).details}</p>}
+                  {item.labelEn && <p className="mt-0.5 text-xs text-gray-500 whitespace-pre-line">EN: {item.labelEn}</p>}
+                </div>
                 <span className="font-medium whitespace-nowrap">{item.quantity} {item.unit}</span>
               </div>
               <p className="text-xs text-gray-500 mt-0.5">

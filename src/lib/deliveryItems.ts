@@ -19,6 +19,15 @@ export function isCustom(i: any): boolean {
   return !i.products_mf;
 }
 
+export function splitCustomerLabel(value: string): { name: string; details: string } {
+  const [name = "", ...details] = value.split(/\r?\n/);
+  return { name: name.trim(), details: details.join("\n").trim() };
+}
+
+export function joinCustomerLabel(name: string, details: string): string {
+  return [name.trim(), details.trim()].filter(Boolean).join("\n");
+}
+
 // path -> short-lived signed URL, for every photo on every line
 export async function getItemPhotoUrls(supabase: SupabaseClient, items: any[]): Promise<Map<string, string>> {
   const paths = items.flatMap((i) => i.image_paths ?? []);

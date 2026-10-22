@@ -6,7 +6,7 @@ import { PdfDownloadButton } from "@/components/ui/PdfDownloadButton";
 import { DocumentHeader } from "@/components/ui/DocumentHeader";
 import { SignatureBlock } from "@/components/ui/SignatureBlock";
 import { docLang, docText, formatDocDate, unitLabel } from "@/lib/docI18n";
-import { ITEM_SELECT, applyItemOrder, getCustomerLines, getItemOrder, getItemPhotoUrls, isCustom, itemName, itemUnit, productImage } from "@/lib/deliveryItems";
+import { ITEM_SELECT, applyItemOrder, getCustomerLines, getItemOrder, getItemPhotoUrls, isCustom, itemName, itemUnit, productImage, splitCustomerLabel } from "@/lib/deliveryItems";
 
 async function getPrinterName() {
   const user = await getAuthUser();
@@ -169,6 +169,7 @@ export default async function PrintDeliveryPage({
             {useCustomerLines &&
               customerLines!.lines.map((l, idx) => {
                 const label = lang === "en" && l.labelEn ? l.labelEn : l.label;
+                const { name, details } = splitCustomerLabel(label);
                 return (
                   <tr key={l.id} data-pdf-block className="border-b border-slate-100 align-top last:border-b-0">
                     <td className="py-2.5 pr-2 text-gray-500">{idx + 1}</td>
@@ -178,7 +179,10 @@ export default async function PrintDeliveryPage({
                         <img src={l.imageUrl} alt={label} className="h-14 w-20 rounded-lg border border-slate-100 bg-slate-50 object-contain" />
                       ) : null}
                     </td>
-                    <td className="py-2.5 pr-2 text-gray-900 whitespace-pre-line">{label}</td>
+                    <td className="py-2.5 pr-2 text-gray-900">
+                      <p className="font-medium">{name}</p>
+                      {details && <p className="mt-0.5 text-xs text-gray-600 whitespace-pre-line">{details}</p>}
+                    </td>
                     <td className="py-2.5 text-right font-medium whitespace-nowrap">
                       {l.quantity} {unitLabel(l.unit, l.quantity, lang)}
                     </td>
