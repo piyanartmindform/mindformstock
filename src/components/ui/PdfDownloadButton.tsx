@@ -6,10 +6,9 @@ import { createPortal } from "react-dom";
 const PAGE_W_MM = 210;
 const PAGE_H_MM = 297;
 const MARGIN_MM = 6; // blank space above and below on every page
-// The document is laid out off-screen at this width (css px) and stretched to the full page width.
-// A wider layout shrinks everything a little, so a slightly long document still fits on one page
-// without side margins; 794 px is A4 at 96 dpi.
-const LAYOUT_WIDTHS_PX = Array.from({ length: 21 }, (_, i) => 794 + i * 16); // 794 .. 1114
+// Keep the off-screen layout at A4's CSS width so the downloaded PDF has the same
+// proportions as the on-screen document. Longer documents continue on another page.
+const LAYOUT_WIDTH_PX = 794; // A4 at 96 dpi
 
 interface PreviewPage {
   dataUrl: string;
@@ -93,21 +92,14 @@ export function PdfDownloadButton({
       const capacityAt = (width: number) => ((PAGE_H_MM - 2 * MARGIN_MM) / PAGE_W_MM) * width; // css px per page
 
       // wait for the (cached) images in the clone before measuring
-      layoutAt(LAYOUT_WIDTHS_PX[0]);
+      layoutAt(LAYOUT_WIDTH_PX);
       await Promise.all(
         Array.from(clone.querySelectorAll("img")).map((img) =>
           img.complete ? null : new Promise((resolve) => { img.onload = img.onerror = resolve; })
         )
       );
 
-      // smallest layout width that fits on one page, otherwise the widest (several pages)
-      let width = LAYOUT_WIDTHS_PX[LAYOUT_WIDTHS_PX.length - 1];
-      for (const w of LAYOUT_WIDTHS_PX) {
-        if (layoutAt(w) <= capacityAt(w)) {
-          width = w;
-          break;
-        }
-      }
+      const width = LAYOUT_WIDTH_PX;
       const totalH = layoutAt(width);
       const pageCapacity = capacityAt(width);
 
