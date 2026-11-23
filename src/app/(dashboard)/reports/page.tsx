@@ -5,6 +5,7 @@ import { formatDateShort, formatDateRange, groupWarrantyByCustomerProduct } from
 import { ReportDateFilter } from "./ReportDateFilter";
 import { HistoryGroups } from "./HistoryGroups";
 import { getReportData } from "@/lib/queries/reports";
+import { getCurrentUserRole } from "@/lib/auth";
 
 function ProductThumb({ src, alt }: { src?: string | null; alt: string }) {
   return src ? (
@@ -19,7 +20,10 @@ export default async function ReportsPage({
 }: {
   searchParams: { from?: string; to?: string };
 }) {
-  const { stockIn, stockOut, warranty } = await getReportData(searchParams.from, searchParams.to);
+  const [{ stockIn, stockOut, warranty }, role] = await Promise.all([
+    getReportData(searchParams.from, searchParams.to),
+    getCurrentUserRole(),
+  ]);
   const warrantyGroups = groupWarrantyByCustomerProduct(warranty);
 
   const totalIn = stockIn.reduce((s: number, i: any) => s + i.quantity, 0);
@@ -47,6 +51,15 @@ export default async function ReportsPage({
           <span>📄</span> ส่งออก PDF
         </Link>
       </div>
+
+      {role === "admin" && (
+        <Link href="/reports/cost" className="block">
+          <Card className="flex items-center justify-between active:scale-95 transition-transform">
+            <span className="font-medium text-gray-900">💰 สรุปต้นทุนสินค้า</span>
+            <span className="text-brand text-sm">ดู →</span>
+          </Card>
+        </Link>
+      )}
 
       <ReportDateFilter />
 
