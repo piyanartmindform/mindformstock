@@ -31,6 +31,7 @@ export function NewProductForm({ categories }: { categories: Category[] }) {
       unit: fd.get("unit") as string || "ชิ้น",
       min_stock_level: Number(fd.get("min_stock_level")) || 0,
       default_warranty_months: Math.round(Number(fd.get("default_warranty_years")) * 12) || 0,
+      cost_thb: fd.get("cost_thb") ? Number(fd.get("cost_thb")) : null,
       current_stock: 0,
       image_urls: imageUrls,
       is_active: true,
@@ -90,6 +91,15 @@ export function NewProductForm({ categories }: { categories: Category[] }) {
           placeholder="0 = ไม่มีประกัน"
         />
       </div>
+
+      <Input
+        label="ราคาต้นทุน (บาท)"
+        name="cost_thb"
+        type="number"
+        inputMode="decimal"
+        min="0"
+        step="0.01"
+      />
 
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium text-gray-700">รายละเอียด</label>

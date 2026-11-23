@@ -97,6 +97,14 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
               {p.default_warranty_months > 0 ? `${p.default_warranty_months / 12} ปี` : "ไม่มีประกัน"}
             </span>
           </div>
+          {isAdmin && (
+            <div className="flex justify-between">
+              <span className="text-gray-500">ราคาต้นทุน</span>
+              <span className="font-medium">
+                {p.cost_thb != null ? `฿${Number(p.cost_thb).toLocaleString("th-TH", { minimumFractionDigits: 2 })}` : "-"}
+              </span>
+            </div>
+          )}
           {p.description && (
             <div className="pt-2 border-t border-gray-100">
               <p className="text-gray-500 mb-1">รายละเอียด</p>
