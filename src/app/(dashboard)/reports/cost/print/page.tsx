@@ -65,7 +65,7 @@ export default async function CostReportPrintPage() {
                 </tr>
               </thead>
               <tbody>
-                {g.rows.map((r) => (
+                {g.rows.filter((r) => r.stock > 0).map((r) => (
                   <tr key={r.id} data-pdf-block className={rowClass}>
                     <td className="py-2 pr-2 text-gray-900">
                       {r.name}
