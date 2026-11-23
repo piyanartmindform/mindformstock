@@ -8,9 +8,7 @@ const navItems = [
   { href: "/", label: "Dashboard", icon: "🏠" },
   { href: "/products", label: "สินค้า", icon: "📦" },
   { href: "/stock-in", label: "รับสินค้าเข้า", icon: "📥" },
-  { href: "/stock-in/expected", label: "รายการที่รอรับเข้า", icon: "📋" },
   { href: "/stock-out", label: "ขายออก", icon: "🛒" },
-  { href: "/stock-out/expected", label: "รายการที่รอส่งออก", icon: "📤" },
   { href: "/deliveries", label: "รอบส่ง / ใบส่งงาน", icon: "🚚" },
   { href: "/conversions", label: "ใบแปลงสภาพ", icon: "🔧" },
   { href: "/warranty", label: "QR / ประกัน", icon: "🔲" },
@@ -18,6 +16,7 @@ const navItems = [
   { href: "/warranty/generate", label: "สร้าง QR Batch", icon: "🏷️", adminOnly: true },
   { href: "/customers", label: "ลูกค้า", icon: "👥" },
   { href: "/reports", label: "รายงาน", icon: "📊" },
+  { href: "/reports/cost", label: "สรุปต้นทุนสินค้า", icon: "💰", adminOnly: true },
   { href: "/settings", label: "ตั้งค่า", icon: "⚙️" },
 ];
 
@@ -35,7 +34,12 @@ export function Sidebar({ isAdmin }: { isAdmin: boolean }) {
       </div>
       <nav className="flex-1 py-4 px-2">
         {items.map((item) => {
-          const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+          // A parent item (e.g. /reports) is not active while a longer sibling (e.g. /reports/cost) matches.
+          const isActive =
+            item.href === "/"
+              ? pathname === "/"
+              : pathname.startsWith(item.href) &&
+                !items.some((o) => o.href.length > item.href.length && pathname.startsWith(o.href));
           return (
             <Link
               key={item.href}
